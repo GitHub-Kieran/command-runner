@@ -1,0 +1,90 @@
+{
+  "name": "commandrunner-reactwebsite",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Cross-platform command execution tool",
+  "author": "Command Runner Team <team@commandrunner.dev>",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "homepage": "./",
+  "build": {
+    "appId": "com.commandrunner.app",
+    "productName": "CommandRunner",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "node_modules/**/*",
+      "dist-electron/api/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/favicon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "public/favicon.ico",
+      "category": "Utility"
+    },
+    "afterPack": "./scripts/after-pack.cjs",
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "packElevateHelper": true
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build-electron-build": "tsc -p tsconfig.electron.json && tsc && vite build --mode electron",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "publish-api": "cd ../CommandRunner.Api && dotnet publish -c Release -r win-x64 --self-contained true -o ../../src/CommandRunner.ReactWebsite/dist-electron/api",
+    "publish-api-linux": "cd ../CommandRunner.Api && dotnet publish -c Release -r linux-x64 --self-contained true -o ../../src/CommandRunner.ReactWebsite/dist-electron/api",
+    "build-electron": "npm run build-electron-build && npm run publish-api && electron-builder",
+    "build-electron-linux": "npm run build-electron-build && npm run publish-api-linux && electron-builder --linux",
+    "build-electron-win": "npm run build-electron-build && npm run publish-api && electron-builder --win",
+    "dist": "npm run build-electron"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/lab": "^7.0.0-beta.17",
+    "@mui/material": "^7.3.2",
+    "axios": "^1.11.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vite-plugin-pwa": "^1.0.3",
+    "wait-on": "^7.2.0"
+  }
+}

@@ -88,6 +88,16 @@ Note: Windows may handle built-in shell commands differently to other platforms.
 2. Open the DMG file and drag the app to your Applications folder
 3. Launch the app from Applications
 
+### Data Storage
+
+Command Runner stores user profiles and settings in the following locations:
+
+- **Windows**: `%APPDATA%\CommandRunner\` (typically `C:\Users\<username>\AppData\Roaming\CommandRunner\`)
+- **Linux**: `~/.config/CommandRunner/` (or fallback to the application directory if not accessible)
+- **macOS**: `~/Library/Application Support/CommandRunner/`
+
+Profile data is stored as JSON files in these directories and persists between application sessions.
+
 ## Development Setup
 
 ### Prerequisites

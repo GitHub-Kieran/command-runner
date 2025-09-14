@@ -1,0 +1,90 @@
+name: Reusable Build and Unit Test
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu
+          - os: ubuntu-latest
+            dotnet-version: '8.0.x'
+            shell-test: bash
+
+          # Windows with different shells
+          - os: windows-latest
+            dotnet-version: '8.0.x'
+            shell-test: powershell
+          - os: windows-latest
+            dotnet-version: '8.0.x'
+            shell-test: cmd
+
+          # macOS
+          - os: macos-latest
+            dotnet-version: '8.0.x'
+            shell-test: bash
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Setup Node.js for React app
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: src/CommandRunner.ReactWebsite/package-lock.json
+
+    - name: Install React dependencies
+      run: |
+        cd src/CommandRunner.ReactWebsite
+        npm ci
+
+    - name: Build React app
+      run: |
+        cd src/CommandRunner.ReactWebsite
+        npm run build
+
+    - name: Restore .NET dependencies
+      run: dotnet restore
+
+    - name: Build .NET solution
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run unit tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --logger "console;verbosity=detailed"
+
+    - name: Test shell compatibility
+      run: |
+        if [ "${{ matrix.shell-test }}" = "bash" ]; then
+          echo "Testing bash compatibility..."
+          bash -c "echo 'Bash shell test passed'"
+        elif [ "${{ matrix.shell-test }}" = "powershell" ]; then
+          echo "Testing PowerShell compatibility..."
+          pwsh -Command "Write-Host 'PowerShell test passed'"
+        elif [ "${{ matrix.shell-test }}" = "cmd" ]; then
+          echo "Testing CMD compatibility..."
+          cmd /c "echo CMD test passed"
+        fi
+      shell: bash
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.dotnet-version }}
+        path: |
+          **/TestResults/*.xml
+          **/TestResults/*.html
+        retention-days: 30

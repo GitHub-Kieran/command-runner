@@ -1,11 +1,10 @@
-using NUnit.Framework;
 using CommandRunner.Business.Services;
 using CommandRunner.Business.Models;
 using CommandRunner.Data.Models;
 
 namespace CommandRunner.UnitTests;
 
-[Ignore("Ignoring so the tests pass.")]
+[Ignore("Ignoring so the tests pass on other platforms.")]
 [TestFixture]
 public class CommandExecutionServiceTests
 {
@@ -27,30 +26,24 @@ public class CommandExecutionServiceTests
             Name = "Echo Test",
             Executable = "echo",
             Arguments = "Hello World",
-            WorkingDirectory = Directory.GetCurrentDirectory(),
-            Shell = null
+            WorkingDirectory = Directory.GetCurrentDirectory()
         };
 
         var result = await _executionService.ExecuteCommandAsync(command, command.WorkingDirectory);
 
-        Console.WriteLine($"Test Debug: ExitCode: {result.ExitCode}, WasSuccessful: {result.WasSuccessful}");
-        Console.WriteLine($"Test Debug: StandardOutput: '{result.StandardOutput}'");
-        Console.WriteLine($"Test Debug: StandardError: '{result.StandardError}'");
-        Console.WriteLine($"Test Debug: ExecutionErrors: {string.Join(", ", result.ExecutionErrors)}");
-
         Assert.Multiple(() =>
         {
-            Assert.IsTrue(result.WasSuccessful, $"Command failed with exit code {result.ExitCode}. Output: '{result.StandardOutput}', Error: '{result.StandardError}'");
+            Assert.That(result.WasSuccessful, Is.True, $"Command failed with exit code {result.ExitCode}. Output: '{result.StandardOutput}', Error: '{result.StandardError}'");
             Assert.That(result.ExitCode, Is.EqualTo(0));
-            Assert.IsNotNull(result.StandardOutput);
-            Assert.IsNotEmpty(result.StandardOutput);
-            Assert.IsTrue(result.StandardOutput.Contains("Hello World"));
+            Assert.That(result.StandardOutput, Is.Not.Null);
+            Assert.That(result.StandardOutput, Is.Not.Empty);
+            Assert.That(result.StandardOutput.Contains("Hello World"), Is.True);
             Assert.That(result.WorkingDirectory, Is.EqualTo(command.WorkingDirectory));
             Assert.That(result.CommandId, Is.EqualTo(command.Id));
             Assert.That(result.CommandName, Is.EqualTo(command.Name));
             Assert.That(result.StartedAt, Is.Not.EqualTo(default));
             Assert.That(result.CompletedAt, Is.Not.EqualTo(default));
-            Assert.IsTrue(result.ExecutionTime > TimeSpan.Zero);
+            Assert.That(result.ExecutionTime > TimeSpan.Zero, Is.True);
         });
     }
 
@@ -69,10 +62,10 @@ public class CommandExecutionServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsFalse(result.WasSuccessful);
+            Assert.That(result.WasSuccessful, Is.False);
             Assert.That(result.ExitCode, Is.Not.EqualTo(0));
-            Assert.IsNotNull(result.ExecutionErrors);
-            Assert.IsNotEmpty(result.ExecutionErrors);
+            Assert.That(result.ExecutionErrors, Is.Not.Null);
+            Assert.That(result.ExecutionErrors, Is.Not.Empty);
         });
     }
 
@@ -85,7 +78,6 @@ public class CommandExecutionServiceTests
             Executable = "echo",
             Arguments = "test",
             WorkingDirectory = Directory.GetCurrentDirectory(),
-            Shell = null,
             EnvironmentVariables = new Dictionary<string, string>
             {
                 ["TEST_VAR"] = "test_value"
@@ -96,7 +88,7 @@ public class CommandExecutionServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsNotNull(result.EnvironmentVariables);
+            Assert.That(result.EnvironmentVariables, Is.Not.Null);
             Assert.That(result.EnvironmentVariables.Count, Is.EqualTo(command.EnvironmentVariables.Count));
             Assert.That(result.EnvironmentVariables["TEST_VAR"], Is.EqualTo("test_value"));
         });
@@ -110,10 +102,8 @@ public class CommandExecutionServiceTests
             Name = "Long Running",
             Executable = OperatingSystem.IsWindows() ? "ping" : "sleep",
             Arguments = OperatingSystem.IsWindows() ? "-t 10 127.0.0.1" : "10",
-            WorkingDirectory = Directory.GetCurrentDirectory(),
-            Shell = null
+            WorkingDirectory = Directory.GetCurrentDirectory()
         };
-
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(100);
 
@@ -121,8 +111,8 @@ public class CommandExecutionServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsTrue(result.WasCancelled);
-            Assert.IsNotNull(result.ExecutionErrors);
+            Assert.That(result.WasCancelled, Is.True);
+            Assert.That(result.ExecutionErrors, Is.Not.Null);
         });
     }
 
@@ -136,19 +126,16 @@ public class CommandExecutionServiceTests
                 Name = "Command 1",
                 Executable = "echo",
                 Arguments = "First",
-                WorkingDirectory = Directory.GetCurrentDirectory(),
-                Shell = null
+                WorkingDirectory = Directory.GetCurrentDirectory()
             },
             new Command
             {
                 Name = "Command 2",
                 Executable = "echo",
                 Arguments = "Second",
-                WorkingDirectory = Directory.GetCurrentDirectory(),
-                Shell = null
+                WorkingDirectory = Directory.GetCurrentDirectory()
             }
         };
-
         var results = new List<CommandExecutionResult>();
 
         var executionResults = await _executionService.ExecuteCommandsAsync(
@@ -160,7 +147,7 @@ public class CommandExecutionServiceTests
         {
             Assert.That(executionResults.Count(), Is.EqualTo(2));
             Assert.That(results.Count, Is.EqualTo(2));
-            Assert.IsTrue(results.All(r => r.WasSuccessful));
+            Assert.That(results.All(r => r.WasSuccessful), Is.True);
             Assert.That(results[0].CommandId, Is.EqualTo(commands[0].Id));
             Assert.That(results[1].CommandId, Is.EqualTo(commands[1].Id));
         });
@@ -176,19 +163,16 @@ public class CommandExecutionServiceTests
                 Name = "Parallel 1",
                 Executable = "echo",
                 Arguments = "Parallel1",
-                WorkingDirectory = Directory.GetCurrentDirectory(),
-                Shell = null
+                WorkingDirectory = Directory.GetCurrentDirectory()
             },
             new Command
             {
                 Name = "Parallel 2",
                 Executable = "echo",
                 Arguments = "Parallel2",
-                WorkingDirectory = Directory.GetCurrentDirectory(),
-                Shell = null
+                WorkingDirectory = Directory.GetCurrentDirectory()
             }
         };
-
         var results = new List<CommandExecutionResult>();
 
         var executionResults = await _executionService.ExecuteCommandsParallelAsync(
@@ -201,7 +185,7 @@ public class CommandExecutionServiceTests
         {
             Assert.That(executionResults.Count(), Is.EqualTo(2));
             Assert.That(results.Count, Is.EqualTo(2));
-            Assert.IsTrue(results.All(r => r.WasSuccessful));
+            Assert.That(results.All(r => r.WasSuccessful), Is.True);
         });
     }
 }

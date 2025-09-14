@@ -2,6 +2,8 @@
 
 A cross-platform desktop application for executing commands through a user-friendly interface. Built with React, TypeScript, Electron, and ASP.NET Core.
 
+![License](https://img.shields.io/github/license/GitHub-Kieran/command-runner?color=green) ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
+
 ## Quick Start
 
 1. **Download** the appropriate installer for your platform from [Releases](https://github.com/GitHub-Kieran/command-runner/releases)

@@ -15,15 +15,9 @@ const DirectorySelectorComponent: React.FC<DirectorySelectorProps> = ({
   onDirectoryChange,
   size = 'medium'
 }) => {
-  console.log('DirectorySelector: render - directories received:', directories?.length || 0, 'items');
-  console.log('DirectorySelector: render - selectedDirectory:', selectedDirectory);
-  console.log('DirectorySelector: render - directories data:', directories);
-
   const handleChange = (event: SelectChangeEvent<string>) => {
-    console.log('DirectorySelector: handleChange called with value:', event.target.value);
     const directoryId = event.target.value;
     const directory = directories.find(d => d.id === directoryId) || null;
-    console.log('DirectorySelector: found directory:', directory);
     onDirectoryChange(directory);
   };
 

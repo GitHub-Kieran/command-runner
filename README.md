@@ -15,12 +15,14 @@ A cross-platform desktop application for executing commands through a user-frien
 Execute commands across multiple directories simultaneously.
 
 ![Command Runner Main Interface](images/app-full.png)
+
 *Main application interface showing command execution across multiple directories*
 
 ### 🎯 **Compact Mode**
 Focus mode provides a distraction-free interface for intensive command execution sessions, hiding unnecessary UI elements.
 
 ![Compact Mode View](images/compact-mode.png)
+
 *Compact mode minimizes the interface for better focus during command execution*
 
 ### ⚙️ **Profile Management**
@@ -44,20 +46,18 @@ Built-in dark and light themes for comfortable viewing in any environment or lig
 ## Upcoming Features
 
 - **Progress Tracking**: Stream command outputs to the output window
-- **Drag & Drop**: Reorder commands
+- **Drag & Drop**: Reorder commands or profiles
 - **Keyboard Shortcuts**: Use keys to select and execute commands
+- **Multiple Execution**: Combine commands and run them together
+- **Multiple Directories**: Add multiple directories to a command for quick switching
 
 ## Desktop App Installation
 
 ### Windows
 
-1. Download the latest `.exe` installer from the [Releases](https://github.com/username/command-runner/releases) page
-2. Run the installer and follow the setup wizard
-3. The app will be installed and available in your Start Menu
-
 ### Linux
 
-#### Option 1: Debian/Ubuntu (.deb) - Recommended
+#### Option 1: Debian/Ubuntu (.deb)
 1. Download the latest `.deb` file from the [Releases](https://github.com/username/command-runner/releases) page
 2. Install using your package manager: `sudo dpkg -i command-runner_*.deb`
 3. If there are dependency issues, run: `sudo apt-get install -f`
@@ -73,6 +73,10 @@ For distributions not supporting .deb or AppImage:
 cd src/CommandRunner.ReactWebsite
 npm run build-electron-linux
 ```
+
+1. Download the latest `.exe` installer from the [Releases](https://github.com/username/command-runner/releases) page
+2. Run the installer and follow the setup wizard
+3. The app will be installed and available in your Start Menu
 
 ### macOS
 

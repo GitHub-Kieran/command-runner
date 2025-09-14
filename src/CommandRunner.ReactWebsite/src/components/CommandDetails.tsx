@@ -42,24 +42,6 @@ export const CommandDetails: React.FC<CommandDetailsProps> = ({
               title="This command will ask for confirmation before running"
             />
           )}
-          {selectedCommand.shell && selectedCommand.shell !== 'bash' && (
-            <Chip
-              label={`🐚 ${selectedCommand.shell}`}
-              size="small"
-              color="secondary"
-              variant="outlined"
-              title={`Command runs in ${selectedCommand.shell} shell`}
-            />
-          )}
-          {Object.keys(selectedCommand.environmentVariables || {}).length > 0 && (
-            <Chip
-              label={`🔧 ${Object.keys(selectedCommand.environmentVariables).length} env vars`}
-              size="small"
-              color="success"
-              variant="outlined"
-              title={`Has ${Object.keys(selectedCommand.environmentVariables).length} environment variables set`}
-            />
-          )}
         </Box>
       </Box>
 

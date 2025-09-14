@@ -9,18 +9,12 @@ import {
   Container,
   Paper,
   Button,
-  IconButton,
   Alert,
   Stack,
   Snackbar,
 } from '@mui/material';
 import {
-  Settings,
   Folder,
-  Brightness4,
-  Brightness7,
-  CenterFocusStrong,
-  CenterFocusWeak,
   CheckCircle,
   Refresh,
   Error as ErrorIcon,
@@ -36,6 +30,7 @@ import { CommandControls } from './components/CommandControls';
 import { CommandDetails } from './components/CommandDetails';
 import { CommandPreview } from './components/CommandPreview';
 import { OutputPanel } from './components/OutputPanel';
+import HeaderButtons from './components/HeaderButtons';
 import { getTheme } from './themes';
 
 function App() {
@@ -520,40 +515,12 @@ function App() {
                 Command Runner
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <IconButton
-                  onClick={toggleFocusMode}
-                  title="Enter Focus Mode"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    '&:hover': {
-                      backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9',
-                    }
-                  }}
-                >
-                  <CenterFocusStrong />
-                </IconButton>
-                <IconButton
-                  onClick={toggleTheme}
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    '&:hover': {
-                      backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9',
-                    }
-                  }}
-                >
-                  {state.theme === 'dark' ? <Brightness7 /> : <Brightness4 />}
-                </IconButton>
-                <IconButton
-                  onClick={handleSettingsClick}
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    '&:hover': {
-                      backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9',
-                    }
-                  }}
-                >
-                  <Settings />
-                </IconButton>
+                <HeaderButtons
+                  themeMode={state.theme}
+                  onToggleFocusMode={toggleFocusMode}
+                  onToggleTheme={toggleTheme}
+                  onSettingsClick={handleSettingsClick}
+                />
               </Box>
             </Toolbar>
           </AppBar>
@@ -627,43 +594,12 @@ function App() {
 
                 {focusMode ? (
                   <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                    <IconButton
-                      size="small"
-                      onClick={toggleFocusMode}
-                      title="Exit Focus Mode"
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        '&:hover': {
-                          backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9',
-                        }
-                      }}
-                    >
-                      <CenterFocusWeak />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={toggleTheme}
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        '&:hover': {
-                          backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9',
-                        }
-                      }}
-                    >
-                      {state.theme === 'dark' ? <Brightness7 /> : <Brightness4 />}
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={handleSettingsClick}
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        '&:hover': {
-                          backgroundColor: theme.palette.mode === 'dark' ? '#334155' : '#f1f5f9',
-                        }
-                      }}
-                    >
-                      <Settings />
-                    </IconButton>
+                    <HeaderButtons
+                      themeMode={state.theme}
+                      onToggleFocusMode={toggleFocusMode}
+                      onToggleTheme={toggleTheme}
+                      onSettingsClick={handleSettingsClick}
+                    />
                   </Box>
                 ) : (
                   <Button

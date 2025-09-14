@@ -4,7 +4,7 @@ A cross-platform desktop application for executing commands through a user-frien
 
 ## Quick Start
 
-1. **Download** the appropriate installer for your platform from [Releases](https://github.com/username/command-runner/releases)
+1. **Download** the appropriate installer for your platform from [Releases](https://github.com/GitHub-Kieran/command-runner/releases)
 2. **Install** and launch the application
 3. **Create a profile** and add your first command
 4. **Execute** commands with a click
@@ -50,20 +50,19 @@ Built-in dark and light themes for comfortable viewing in any environment or lig
 - **Keyboard Shortcuts**: Use keys to select and execute commands
 - **Multiple Execution**: Combine commands and run them together
 - **Multiple Directories**: Add multiple directories to a command for quick switching
+- **Profile Import**: Get up and running faster by importing pre-built profiles
 
 ## Desktop App Installation
-
-### Windows
 
 ### Linux
 
 #### Option 1: Debian/Ubuntu (.deb)
-1. Download the latest `.deb` file from the [Releases](https://github.com/username/command-runner/releases) page
+1. Download the latest `.deb` file from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
 2. Install using your package manager: `sudo dpkg -i command-runner_*.deb`
 3. If there are dependency issues, run: `sudo apt-get install -f`
 
 #### Option 2: AppImage
-1. Download the latest `.AppImage` file from the [Releases](https://github.com/username/command-runner/releases) page
+1. Download the latest `.AppImage` file from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
 2. Make the file executable: `chmod +x Command-Runner-*.AppImage`
 3. Run the AppImage: `./Command-Runner-*.AppImage` or right click and run
 
@@ -73,14 +72,17 @@ For distributions not supporting .deb or AppImage:
 cd src/CommandRunner.ReactWebsite
 npm run build-electron-linux
 ```
+### Windows
 
-1. Download the latest `.exe` installer from the [Releases](https://github.com/username/command-runner/releases) page
+1. Download the latest `.exe` installer from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
 2. Run the installer and follow the setup wizard
 3. The app will be installed and available in your Start Menu
 
+Note: Windows may handle built-in shell commands differently to other platforms. For example, to run 'dir' you can use 'cmd' as the executable and shell, with '/c dir' as the arguments.
+
 ### macOS
 
-1. Download the latest `.dmg` file from the [Releases](https://github.com/username/command-runner/releases) page
+1. Download the latest `.dmg` file from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
 2. Open the DMG file and drag the app to your Applications folder
 3. Launch the app from Applications
 
@@ -96,7 +98,7 @@ npm run build-electron-linux
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/username/command-runner.git
+   git clone https://github.com/GitHub-Kieran/command-runner.git
    cd command-runner
    ```
 
@@ -191,10 +193,10 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/username/command-runner/issues) page
+1. Check the [Issues](https://github.com/GitHub-Kieran/command-runner/issues) page
 2. Create a new issue with detailed information about your problem
 3. Include your operating system, app version, and steps to reproduce
 
 ## Changelog
 
-See [Releases](https://github.com/username/command-runner/releases) for the latest changes and version history.
+See [Releases](https://github.com/GitHub-Kieran/command-runner/releases) for the latest changes and version history.

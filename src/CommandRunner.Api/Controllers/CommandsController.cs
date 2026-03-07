@@ -3,6 +3,7 @@ using CommandRunner.Data.Repositories;
 using CommandRunner.Data.Models;
 using CommandRunner.Business.Services;
 using CommandRunner.Api.DTOs;
+using System.Text.Json;
 
 namespace CommandRunner.Api.Controllers;
 
@@ -94,6 +95,108 @@ public class CommandsController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, $"Command execution failed: {ex.Message}");
+        }
+    }
+
+    [HttpPost("execute-stream")]
+    public async Task ExecuteCommandStream(CommandExecutionRequest request)
+    {
+        Response.Headers.ContentType = "text/event-stream";
+        Response.Headers.CacheControl = "no-cache";
+        Response.Headers.Append("X-Accel-Buffering", "no");
+
+        static string EscapeSseData(string data)
+        {
+            return data.Replace("\r", "").Replace("\n", "\\n");
+        }
+
+        async Task WriteEventAsync(string eventName, string data)
+        {
+            await Response.WriteAsync($"event: {eventName}\n");
+            await Response.WriteAsync($"data: {EscapeSseData(data)}\n\n");
+            await Response.Body.FlushAsync();
+        }
+
+        try
+        {
+            var profile = await _profileRepository.GetByIdAsync(request.ProfileId);
+            if (profile == null)
+            {
+                await WriteEventAsync("error", "Profile not found");
+                return;
+            }
+
+            var command = profile.Commands.FirstOrDefault(c => c.Id == request.CommandId);
+            if (command == null)
+            {
+                await WriteEventAsync("error", "Command not found in profile");
+                return;
+            }
+
+            var requiresConfirmation = await _securityService.RequiresConfirmationAsync(command);
+            if (requiresConfirmation && !request.UserConfirmed)
+            {
+                await WriteEventAsync("error", "Command requires confirmation before execution");
+                return;
+            }
+
+            var workingDirectory = string.IsNullOrWhiteSpace(request.WorkingDirectory)
+                ? command.WorkingDirectory
+                : request.WorkingDirectory;
+
+            var commandToExecute = new Command
+            {
+                Id = command.Id,
+                Name = command.Name,
+                Executable = command.Executable,
+                Arguments = command.Arguments,
+                WorkingDirectory = workingDirectory,
+                Shell = command.Shell,
+                EnvironmentVariables = new Dictionary<string, string>(command.EnvironmentVariables),
+                IterationEnabled = command.IterationEnabled,
+                RequireConfirmation = command.RequireConfirmation,
+                CreatedAt = command.CreatedAt,
+                UpdatedAt = command.UpdatedAt
+            };
+
+            var outputProgress = new Progress<string>(line =>
+            {
+                WriteEventAsync("stdout", line).GetAwaiter().GetResult();
+            });
+
+            var errorProgress = new Progress<string>(line =>
+            {
+                WriteEventAsync("stderr", line).GetAwaiter().GetResult();
+            });
+
+            var result = await _executionService.ExecuteCommandWithStreamingAsync(
+                commandToExecute,
+                workingDirectory,
+                outputProgress,
+                errorProgress,
+                HttpContext.RequestAborted);
+
+            var response = new CommandExecutionResponse
+            {
+                WasSuccessful = result.WasSuccessful,
+                ExitCode = result.ExitCode,
+                Output = result.StandardOutput,
+                ErrorOutput = result.StandardError,
+                ExecutionTime = result.ExecutionTime,
+                StartedAt = result.StartedAt,
+                CompletedAt = result.CompletedAt,
+                ExecutionErrors = result.ExecutionErrors
+            };
+
+            await WriteEventAsync("complete", JsonSerializer.Serialize(response));
+        }
+        catch (OperationCanceledException)
+        {
+            await WriteEventAsync("cancelled", "Execution cancelled");
+        }
+        catch (Exception ex)
+        {
+            await WriteEventAsync("error", $"Command execution failed: {ex.Message}");
         }
     }
 

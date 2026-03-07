@@ -228,8 +228,17 @@ function App() {
         };
         result = await commandsApi.executeIterativeCommand(iterativeRequest);
       } else {
-        // Use regular execution for single commands
-        result = await commandsApi.executeCommand(request);
+        result = await commandsApi.executeCommandWithStreaming(request, {
+          onStdout: (line) => {
+            setOutput((previous) => `${previous}${line}\n`);
+          },
+          onStderr: (line) => {
+            setOutput((previous) => `${previous}[stderr] ${line}\n`);
+          },
+          onError: (message) => {
+            setOutput((previous) => `${previous}[error] ${message}\n`);
+          }
+        });
       }
 
       let outputText = '';
@@ -285,8 +294,7 @@ function App() {
           outputText += `⚠️  Execution was cancelled\n`;
         }
       } else if (!selectedCommand.iterationEnabled && isCommandResult(result)) {
-        // Handle regular execution results
-        outputText = `Command completed\n`;
+        outputText = `\nCommand completed\n`;
         outputText += `Exit Code: ${result.exitCode}\n`;
         outputText += `Execution Time: ${result.executionTime}\n\n`;
 
@@ -300,9 +308,7 @@ function App() {
           outputText += `⚠️  Warning: Command exited with code ${result.exitCode}\n\n`;
         }
 
-        if (result.output && result.output.trim()) {
-          outputText += `Output:\n${result.output}\n`;
-        } else if (result.exitCode === 0) {
+        if (!result.output?.trim() && result.exitCode === 0) {
           outputText += `Output: (command completed successfully, no output)\n`;
         }
 
@@ -316,7 +322,11 @@ function App() {
         }
       }
 
-      setOutput(outputText);
+      if (selectedCommand.iterationEnabled) {
+        setOutput(outputText);
+      } else {
+        setOutput((previous) => `${previous}${outputText}`);
+      }
 
       // Set success status for successful command completion
       if (!selectedCommand.iterationEnabled && isCommandResult(result) && result.exitCode === 0) {
@@ -661,7 +671,7 @@ function App() {
             {/* Output Window */}
             <OutputPanel
               output={output}
-              isLoading={state.isLoading}
+              isLoading={isExecuting || state.isLoading}
               focusMode={focusMode}
               onClear={handleClearOutput}
               onCopy={handleCopyOutput}

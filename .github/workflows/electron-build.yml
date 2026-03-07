@@ -35,6 +35,11 @@ jobs:
         cache: 'npm'
         cache-dependency-path: src/CommandRunner.ReactWebsite/package-lock.json
 
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
     - name: Install dependencies
       working-directory: src/CommandRunner.ReactWebsite
       run: npm ci
@@ -120,7 +125,10 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.{exe,deb,AppImage,dmg}
+          src/CommandRunner.ReactWebsite/dist-electron/**/*.exe
+          src/CommandRunner.ReactWebsite/dist-electron/**/*.deb
+          src/CommandRunner.ReactWebsite/dist-electron/**/*.AppImage
+          src/CommandRunner.ReactWebsite/dist-electron/**/*.dmg
         generate_release_notes: true
         draft: false
         prerelease: false

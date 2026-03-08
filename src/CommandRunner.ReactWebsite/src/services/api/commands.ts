@@ -211,7 +211,22 @@ export class CommandsApiService {
       }
 
       if (eventName === 'progress') {
-        handlers?.onProgress?.(JSON.parse(data));
+        const parsed = JSON.parse(data) as Record<string, unknown>;
+        handlers?.onProgress?.({
+          totalItems: Number(parsed.totalItems ?? parsed.TotalItems ?? 0),
+          processedItems: Number(parsed.processedItems ?? parsed.ProcessedItems ?? 0),
+          successfulItems: Number(parsed.successfulItems ?? parsed.SuccessfulItems ?? 0),
+          failedItems: Number(parsed.failedItems ?? parsed.FailedItems ?? 0),
+          skippedItems: Number(parsed.skippedItems ?? parsed.SkippedItems ?? 0),
+          currentItem: String(parsed.currentItem ?? parsed.CurrentItem ?? ''),
+          currentDirectory: String(parsed.currentDirectory ?? parsed.CurrentDirectory ?? ''),
+          isCompleted: Boolean(parsed.isCompleted ?? parsed.IsCompleted ?? false),
+          wasCancelled: Boolean(parsed.wasCancelled ?? parsed.WasCancelled ?? false),
+          startedAt: String(parsed.startedAt ?? parsed.StartedAt ?? ''),
+          completedAt: parsed.completedAt ?? parsed.CompletedAt
+            ? String(parsed.completedAt ?? parsed.CompletedAt)
+            : undefined,
+        });
         return;
       }
 

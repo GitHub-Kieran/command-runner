@@ -43,6 +43,7 @@ function App() {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [retryingApi, setRetryingApi] = useState(false);
   const executionAbortControllerRef = useRef<AbortController | null>(null);
+  const lastProgressSnapshotRef = useRef<string>('');
 
   const theme = getTheme(state.theme);
 
@@ -188,6 +189,7 @@ function App() {
 
     const abortController = new AbortController();
     executionAbortControllerRef.current = abortController;
+    lastProgressSnapshotRef.current = '';
 
     // Check if command requires confirmation
     if (selectedCommand.requireConfirmation) {
@@ -246,6 +248,13 @@ function App() {
             setOutput((previous) => `${previous}[${dirName}][stderr] ${line}\n`);
           },
           onProgress: (progress) => {
+            const snapshot = `${progress.processedItems}/${progress.totalItems}:${progress.successfulItems}:${progress.failedItems}:${progress.skippedItems}`;
+
+            if (lastProgressSnapshotRef.current === snapshot) {
+              return;
+            }
+
+            lastProgressSnapshotRef.current = snapshot;
             setOutput((previous) => `${previous}[progress] ${progress.processedItems}/${progress.totalItems} (ok: ${progress.successfulItems}, failed: ${progress.failedItems}, skipped: ${progress.skippedItems})\n`);
           },
           onError: (message) => {
@@ -377,6 +386,7 @@ function App() {
     } finally {
       setIsExecuting(false);
       executionAbortControllerRef.current = null;
+      lastProgressSnapshotRef.current = '';
     }
   };
 

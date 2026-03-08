@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent, type ReactNode } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -25,18 +25,65 @@ import {
 import {
   Add,
   Delete,
+  UploadFile,
+  DragIndicator,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useApp } from '../contexts/AppContext';
-import { ProfileDto, CommandDto } from '../services/api';
+import { ProfileDto, CommandDto, profilesApi } from '../services/api';
 
 interface SettingsDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
+interface SortableCardProps {
+  id: string;
+  children: ReactNode;
+}
+
+function SortableCard({ id, children }: SortableCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+
+  return (
+    <Box
+      ref={setNodeRef}
+      sx={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        width: '100%',
+        position: 'relative',
+      }}
+    >
+      <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+        <IconButton size="small" {...attributes} {...listeners}>
+          <DragIndicator fontSize="small" />
+        </IconButton>
+      </Box>
+      {children}
+    </Box>
+  );
+}
+
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const { state, dispatch } = useApp();
+  const sensors = useSensors(useSensor(PointerSensor));
+  const profileFileInputRef = useRef<HTMLInputElement | null>(null);
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [showCommandForm, setShowCommandForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -52,6 +99,68 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     requireConfirmation: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false); // Local state for immediate feedback
+
+  const handleProfilesDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = state.profiles.findIndex((profile) => profile.id === active.id);
+    const newIndex = state.profiles.findIndex((profile) => profile.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    const reorderedProfiles = arrayMove(state.profiles, oldIndex, newIndex);
+    dispatch({ type: 'SET_PROFILES', payload: reorderedProfiles });
+  };
+
+  const handleCommandsDragEnd = (event: DragEndEvent) => {
+    if (!state.selectedProfile) {
+      return;
+    }
+
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = state.selectedProfile.commands.findIndex((command) => command.id === active.id);
+    const newIndex = state.selectedProfile.commands.findIndex((command) => command.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    const reorderedCommands = arrayMove(state.selectedProfile.commands, oldIndex, newIndex);
+    const updatedProfile = {
+      ...state.selectedProfile,
+      commands: reorderedCommands,
+      updatedAt: new Date().toISOString(),
+    };
+
+    dispatch({ type: 'UPDATE_PROFILE', payload: updatedProfile });
+  };
+
+  const handleImportProfile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    try {
+      const importedProfile = await profilesApi.importProfile(file);
+      dispatch({ type: 'SET_PROFILES', payload: [...state.profiles, importedProfile] });
+      dispatch({ type: 'SET_SELECTED_PROFILE', payload: importedProfile });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to import profile';
+      alert(message);
+    } finally {
+      event.target.value = '';
+    }
+  };
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -261,89 +370,91 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
           <Box>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="h6">Profiles</Typography>
-              <Fab color="primary" size="small" onClick={handleAddProfile}>
-                <Add />
-              </Fab>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<UploadFile />}
+                  onClick={() => profileFileInputRef.current?.click()}
+                >
+                  Import Profile
+                </Button>
+                <Fab color="primary" size="small" onClick={handleAddProfile}>
+                  <Add />
+                </Fab>
+              </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              {state.profiles.map((profile) => (
-                <Card
-                  key={profile.id}
-                  sx={{
-                    cursor: 'pointer',
-                    border: state.selectedProfile?.id === profile.id ? 2 : 1,
-                    borderColor: state.selectedProfile?.id === profile.id ? 'primary.main' : 'divider',
-                    minWidth: 280,
-                    flex: '1 1 auto',
-                  }}
-                  onClick={(e) => {
-                    // Only select profile if not clicking on buttons
-                    if (!(e.target as HTMLElement).closest('button')) {
-                      handleEditProfile(profile);
-                    }
-                  }}
-                >
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                          {profile.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          {profile.description || 'No description'}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                          <Chip
-                            label={`${profile.commands.length} commands`}
-                            size="small"
-                            variant="outlined"
-                          />
-                          {profile.isFavorite && (
-                            <Chip label="★ Favorite" size="small" color="primary" />
-                          )}
-                        </Box>
-                      </Box>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditProfile(profile);
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleProfilesDragEnd}>
+              <SortableContext items={state.profiles.map((profile) => profile.id)} strategy={verticalListSortingStrategy}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  {state.profiles.map((profile) => (
+                    <SortableCard key={profile.id} id={profile.id}>
+                      <Card
+                        sx={{
+                          cursor: 'pointer',
+                          border: state.selectedProfile?.id === profile.id ? 2 : 1,
+                          borderColor: state.selectedProfile?.id === profile.id ? 'primary.main' : 'divider',
+                          minWidth: 280,
+                          flex: '1 1 auto',
                         }}
-                        title="Select this profile to view and edit its commands"
-                        sx={{ ml: 1 }}
+                        onClick={(e) => {
+                          if (!(e.target as HTMLElement).closest('button')) {
+                            handleEditProfile(profile);
+                          }
+                        }}
                       >
-                        Select
-                      </Button>
-                    </Box>
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'space-between' }}>
-                    <Button
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditProfileDetails(profile);
-                      }}
-                      title="Edit profile name and description"
-                    >
-                      Edit
-                    </Button>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProfile(profile);
-                      }}
-                      title="Delete this profile and all its commands"
-                    >
-                      <Delete />
-                    </IconButton>
-                  </CardActions>
-                </Card>
-              ))}
-            </Box>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="h6" gutterBottom>
+                                {profile.name}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                {profile.description || 'No description'}
+                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                                <Chip
+                                  label={`${profile.commands.length} commands`}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                                {profile.isFavorite && (
+                                  <Chip label="★ Favorite" size="small" color="primary" />
+                                )}
+                              </Box>
+                            </Box>
+                          </Box>
+                        </CardContent>
+                        <CardActions sx={{ justifyContent: 'space-between' }}>
+                          <Button
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditProfileDetails(profile);
+                            }}
+                            title="Edit profile name and description"
+                          >
+                            Edit
+                          </Button>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProfile(profile);
+                            }}
+                            title="Delete this profile and all its commands"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </CardActions>
+                      </Card>
+                    </SortableCard>
+                  ))}
+                </Box>
+              </SortableContext>
+            </DndContext>
 
             {state.selectedProfile && (
               <Box sx={{ mt: 4 }}>
@@ -367,9 +478,15 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     </Button>
                   </Box>
                 ) : (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                    {state.selectedProfile.commands.map((command) => (
-                      <Card key={command.id} sx={{ minWidth: 280, flex: '1 1 auto' }}>
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCommandsDragEnd}>
+                    <SortableContext
+                      items={state.selectedProfile.commands.map((command) => command.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                        {state.selectedProfile.commands.map((command) => (
+                          <SortableCard key={command.id} id={command.id}>
+                            <Card sx={{ minWidth: 280, flex: '1 1 auto' }}>
                         <CardContent>
                           <Typography variant="h6" gutterBottom>
                             {command.name}
@@ -439,9 +556,12 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                             <Delete />
                           </IconButton>
                         </CardActions>
-                      </Card>
-                    ))}
-                  </Box>
+                            </Card>
+                          </SortableCard>
+                        ))}
+                      </Box>
+                    </SortableContext>
+                  </DndContext>
                 )}
               </Box>
             )}
@@ -568,6 +688,13 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       <DialogActions>
         <Button onClick={onClose} title="Close settings dialog">Close</Button>
       </DialogActions>
+      <input
+        ref={profileFileInputRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={handleImportProfile}
+      />
     </Dialog>
   );
 }

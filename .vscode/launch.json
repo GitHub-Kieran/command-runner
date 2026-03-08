@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Command Runner (Electron + API)",
+      "configurations": [
+        "Command Runner API",
+        "Command Runner Electron"
+      ]
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Command Runner API",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/src/CommandRunner.Api/CommandRunner.Api.csproj"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Command Runner Electron",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "electron-dev"
+      ],
+      "cwd": "${workspaceFolder}/src/CommandRunner.ReactWebsite",
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    }
+  ]
+}

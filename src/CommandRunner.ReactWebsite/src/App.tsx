@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ThemeProvider,
   CssBaseline,
@@ -42,6 +42,8 @@ function App() {
   const [focusMode, setFocusMode] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [retryingApi, setRetryingApi] = useState(false);
+  const executionAbortControllerRef = useRef<AbortController | null>(null);
+  const lastProgressSnapshotRef = useRef<string>('');
 
   const theme = getTheme(state.theme);
 
@@ -181,6 +183,14 @@ function App() {
   const handleExecuteCommand = async () => {
     if (!selectedCommand || !state.selectedProfile) return;
 
+    if (executionAbortControllerRef.current) {
+      executionAbortControllerRef.current.abort();
+    }
+
+    const abortController = new AbortController();
+    executionAbortControllerRef.current = abortController;
+    lastProgressSnapshotRef.current = '';
+
     // Check if command requires confirmation
     if (selectedCommand.requireConfirmation) {
       const confirmed = window.confirm(
@@ -212,24 +222,57 @@ function App() {
 
       let result;
       if (selectedCommand.iterationEnabled) {
-        // Use iterative execution for commands with iteration enabled
-        // Configure for shallow iteration (only immediate children, not recursive)
         const iterativeRequest = {
           ...request,
           iterationOptions: {
-            maxDepth: 1, // Only immediate children
-            includeRootDirectory: false, // Don't run in root directory
-            skipErrors: true, // Continue on errors
-            stopOnFirstFailure: false, // Process all directories
-            excludePatterns: [], // No exclusions
-            includePatterns: [], // Include all
-            maxParallelism: 3 // Limit concurrent executions
+            maxDepth: 1,
+            includeRootDirectory: false,
+            skipErrors: true,
+            stopOnFirstFailure: false,
+            excludePatterns: [],
+            includePatterns: [],
+            maxParallelism: 1
           }
         };
-        result = await commandsApi.executeIterativeCommand(iterativeRequest);
+        result = await commandsApi.executeIterativeCommandWithStreaming(iterativeRequest, {
+          onItemStart: (itemPath) => {
+            const dirName = itemPath.split(/[\\/]/).filter(Boolean).pop() || itemPath;
+            setOutput((previous) => `${previous}\n▶ Processing ${dirName}\n`);
+          },
+          onStdout: (itemPath, line) => {
+            const dirName = itemPath.split(/[\\/]/).filter(Boolean).pop() || itemPath;
+            setOutput((previous) => `${previous}[${dirName}] ${line}\n`);
+          },
+          onStderr: (itemPath, line) => {
+            const dirName = itemPath.split(/[\\/]/).filter(Boolean).pop() || itemPath;
+            setOutput((previous) => `${previous}[${dirName}][stderr] ${line}\n`);
+          },
+          onProgress: (progress) => {
+            const snapshot = `${progress.processedItems}/${progress.totalItems}:${progress.successfulItems}:${progress.failedItems}:${progress.skippedItems}`;
+
+            if (lastProgressSnapshotRef.current === snapshot) {
+              return;
+            }
+
+            lastProgressSnapshotRef.current = snapshot;
+            setOutput((previous) => `${previous}[progress] ${progress.processedItems}/${progress.totalItems} (ok: ${progress.successfulItems}, failed: ${progress.failedItems}, skipped: ${progress.skippedItems})\n`);
+          },
+          onError: (message) => {
+            setOutput((previous) => `${previous}[error] ${message}\n`);
+          }
+        }, abortController.signal);
       } else {
-        // Use regular execution for single commands
-        result = await commandsApi.executeCommand(request);
+        result = await commandsApi.executeCommandWithStreaming(request, {
+          onStdout: (line) => {
+            setOutput((previous) => `${previous}${line}\n`);
+          },
+          onStderr: (line) => {
+            setOutput((previous) => `${previous}[stderr] ${line}\n`);
+          },
+          onError: (message) => {
+            setOutput((previous) => `${previous}[error] ${message}\n`);
+          }
+        }, abortController.signal);
       }
 
       let outputText = '';
@@ -285,8 +328,7 @@ function App() {
           outputText += `⚠️  Execution was cancelled\n`;
         }
       } else if (!selectedCommand.iterationEnabled && isCommandResult(result)) {
-        // Handle regular execution results
-        outputText = `Command completed\n`;
+        outputText = `\nCommand completed\n`;
         outputText += `Exit Code: ${result.exitCode}\n`;
         outputText += `Execution Time: ${result.executionTime}\n\n`;
 
@@ -300,9 +342,7 @@ function App() {
           outputText += `⚠️  Warning: Command exited with code ${result.exitCode}\n\n`;
         }
 
-        if (result.output && result.output.trim()) {
-          outputText += `Output:\n${result.output}\n`;
-        } else if (result.exitCode === 0) {
+        if (!result.output?.trim() && result.exitCode === 0) {
           outputText += `Output: (command completed successfully, no output)\n`;
         }
 
@@ -316,7 +356,11 @@ function App() {
         }
       }
 
-      setOutput(outputText);
+      if (!selectedCommand.iterationEnabled) {
+        setOutput((previous) => `${previous}${outputText}`);
+      } else if (outputText) {
+        setOutput((previous) => `${previous}\n${outputText}`);
+      }
 
       // Set success status for successful command completion
       if (!selectedCommand.iterationEnabled && isCommandResult(result) && result.exitCode === 0) {
@@ -330,12 +374,25 @@ function App() {
         dispatch({ type: 'ADD_EXECUTION', payload: result as CommandExecutionResponse });
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setOutput((previous) => `${previous}\n[info] Execution stopped by user.\n`);
+        return;
+      }
+
       const errorMessage = (error as any)?.message || String(error) || 'Unknown error occurred';
       console.error('Command execution error:', error);
       setOutput(`Command execution failed:\n${errorMessage}\n\nTroubleshooting tips:\n• Check if the working directory exists\n• Verify the command is available in PATH\n• Ensure proper permissions\n• Try using absolute paths instead of ~\n`);
       // Error status is handled by the error display
     } finally {
       setIsExecuting(false);
+      executionAbortControllerRef.current = null;
+      lastProgressSnapshotRef.current = '';
+    }
+  };
+
+  const handleStopExecution = () => {
+    if (executionAbortControllerRef.current) {
+      executionAbortControllerRef.current.abort();
     }
   };
 
@@ -636,6 +693,7 @@ function App() {
                   isExecuting={isExecuting}
                   focusMode={focusMode}
                   onExecute={handleExecuteCommand}
+                  onStop={handleStopExecution}
                   onClear={handleClearCommand}
                 />
               </Box>
@@ -661,7 +719,7 @@ function App() {
             {/* Output Window */}
             <OutputPanel
               output={output}
-              isLoading={state.isLoading}
+              isLoading={isExecuting || state.isLoading}
               focusMode={focusMode}
               onClear={handleClearOutput}
               onCopy={handleCopyOutput}

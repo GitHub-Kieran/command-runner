@@ -30,6 +30,9 @@ Focus mode provides a distraction-free interface for intensive command execution
 ### ⚙️ **Profile Management**
 Create and manage command profiles with custom settings, environment variables, and execution parameters.
 
+- Import profile files directly from JSON
+- Reorder profiles and commands with drag-and-drop in the profile manager
+
 ![Profile Settings Dialog](images/profile-settings.png)
 *Comprehensive profile configuration with environment variables and command settings*
 
@@ -42,31 +45,33 @@ Easily switch between working directories with a user-friendly selector.
 ### 🔄 **Command Iteration**
 Run commands across multiple subdirectories recursively with configurable depth and error handling options.
 
+### 📡 **Live Output Streaming**
+See command output in real time while commands are still running, including iterative runs across directories.
+
 ### 🌓 **Theme Support**
 Built-in dark and light themes for comfortable viewing in any environment or lighting condition.
 
 ## Upcoming Features
 
-- **Progress Tracking**: Stream command outputs to the output window
-- **Drag & Drop**: Reorder commands or profiles
 - **Keyboard Shortcuts**: Use keys to select and execute commands
 - **Multiple Execution**: Combine commands and run them together
 - **Multiple Directories**: Add multiple directories to a command for quick switching
-- **Profile Import**: Get up and running faster by importing pre-built profiles
 
 ## Desktop App Installation
+
+Desktop installers include the API backend and start it automatically when the app launches. You should not need to manually run the API in normal desktop usage.
 
 ### Linux
 
 #### Option 1: Debian/Ubuntu (.deb)
 1. Download the latest `.deb` file from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
-2. Install using your package manager: `sudo dpkg -i command-runner_*.deb`
+2. Install using your package manager: `sudo dpkg -i commandrunner-reactwebsite_*.deb`
 3. If there are dependency issues, run: `sudo apt-get install -f`
 
 #### Option 2: AppImage
 1. Download the latest `.AppImage` file from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
-2. Make the file executable: `chmod +x Command-Runner-*.AppImage`
-3. Run the AppImage: `./Command-Runner-*.AppImage` or right click and run
+2. Make the file executable: `chmod +x CommandRunner-*.AppImage`
+3. Run the AppImage: `./CommandRunner-*.AppImage` or right click and run
 
 #### Option 3: Other Linux Distributions
 For distributions not supporting .deb or AppImage:
@@ -104,7 +109,7 @@ Profile data is stored as JSON files in these directories and persists between a
 
 - Node.js 18+ and npm
 - Git
-- .NET 8.0 SDK (for API backend)
+- .NET 10.0 SDK (for API/backend projects)
 
 ### Installation & Running
 
@@ -114,14 +119,20 @@ Profile data is stored as JSON files in these directories and persists between a
    cd command-runner
    ```
 
-2. **Start the API server** (in a separate terminal):
+2. **Start the app from VS Code (recommended)**
+   - Select launch profile: `Command Runner (Electron + API)`
+   - This starts both the API and Electron app together
+
+3. **Alternative manual start** (two terminals)
+
+   **API server:**
    ```bash
    cd src/CommandRunner.Api
    dotnet run
    ```
    The API will be available at `http://localhost:5081`
 
-3. **Setup and start the frontend** (in another terminal):
+   **Frontend + Electron:**
    ```bash
    cd src/CommandRunner.ReactWebsite
    npm install
@@ -147,6 +158,19 @@ npm run build-electron-win
 ```
 
 The built packages will be available in `src/CommandRunner.ReactWebsite/dist-electron/`.
+
+## Example Profiles
+
+You can import ready-to-use profile files from [`examples/profiles`](examples/profiles):
+
+- [`dotnet-local-dev.json`](examples/profiles/dotnet-local-dev.json)
+- [`javascript-tooling.json`](examples/profiles/javascript-tooling.json)
+- [`windows-maintenance.json`](examples/profiles/windows-maintenance.json)
+
+Import flow:
+1. Open **Settings**
+2. Select **Import Profile**
+3. Choose one of the JSON files above
 
 ## Keyboard Shortcuts
 
@@ -178,14 +202,14 @@ src/
 **API connection errors:**
 - Ensure the API server is running on port 5081
 - Check firewall settings
-- In development, start the API: `cd src/CommandRunner.Api && dotnet run`
+- In development, use VS Code launch profile `Command Runner (Electron + API)` or run `cd src/CommandRunner.Api && dotnet run`
 
 **Build issues:**
-- Ensure .NET 8.0 SDK is installed
+- Ensure .NET 10.0 SDK is installed
 - Clear node_modules: `rm -rf node_modules && npm install`
 
 **Permission issues:**
-- On Linux: `chmod +x Command-Runner-*.AppImage`
+- On Linux: `chmod +x CommandRunner-*.AppImage`
 - On Windows: Run as administrator if needed
 
 ## Contributing

@@ -20,7 +20,6 @@ public class IterationServiceTests
         _iterationService = new IterationService(_executionService);
     }
 
-    [Ignore("Windows failing")]
     [Test]
     public async Task ExecuteIterativeAsync_SingleDirectory_ExecutesCommand()
     {
@@ -67,7 +66,6 @@ public class IterationServiceTests
         }
     }
 
-    [Ignore("Windows failing")]
     [Test]
     public async Task ExecuteIterativeAsync_MultipleSubdirectories_ExecutesInAll()
     {
@@ -307,7 +305,9 @@ public class IterationServiceTests
     [Test]
     public async Task ValidateIterationOptionsAsync_InvalidRootDirectory_ReturnsError()
     {
-        var invalidPath = "/definitely/does/not/exist";
+        var invalidPath = OperatingSystem.IsWindows()
+            ? @"Z:\definitely\does\not\exist"
+            : "/definitely/does/not/exist";
         var options = new IterationOptions();
 
         var result = await _iterationService.ValidateIterationOptionsAsync(

@@ -20,7 +20,6 @@ public class IterationServiceTests
         _iterationService = new IterationService(_executionService);
     }
 
-    [Ignore("Windows failing")]
     [Test]
     public async Task ExecuteIterativeAsync_SingleDirectory_ExecutesCommand()
     {
@@ -53,12 +52,12 @@ public class IterationServiceTests
 
             Assert.Multiple(() =>
             {
-                Assert.IsTrue(result.IsCompleted);
+                Assert.That(result.IsCompleted, Is.True);
                 Assert.That(result.TotalItems, Is.EqualTo(1));
                 Assert.That(result.SuccessfulItems, Is.EqualTo(1));
                 Assert.That(result.FailedItems, Is.EqualTo(0));
-                Assert.IsTrue(progressReports.Any());
-                Assert.IsTrue(progressReports.Last().IsCompleted);
+                Assert.That(progressReports.Any(), Is.True);
+                Assert.That(progressReports.Last().IsCompleted, Is.True);
             });
         }
         finally
@@ -67,7 +66,6 @@ public class IterationServiceTests
         }
     }
 
-    [Ignore("Windows failing")]
     [Test]
     public async Task ExecuteIterativeAsync_MultipleSubdirectories_ExecutesInAll()
     {
@@ -102,7 +100,7 @@ public class IterationServiceTests
 
             Assert.Multiple(() =>
             {
-                Assert.IsTrue(result.IsCompleted);
+                Assert.That(result.IsCompleted, Is.True);
                 Assert.That(result.TotalItems, Is.EqualTo(2));
                 Assert.That(result.SuccessfulItems, Is.EqualTo(2));
                 Assert.That(result.FailedItems, Is.EqualTo(0));
@@ -158,12 +156,12 @@ public class IterationServiceTests
                 // Either it was cancelled, or it completed but we can see progress was made
                 if (result.WasCancelled)
                 {
-                    Assert.IsFalse(result.IsCompleted);
+                    Assert.That(result.IsCompleted, Is.False);
                 }
                 else
                 {
                     // If not cancelled, at least some progress should have been made
-                    Assert.IsTrue(progressReports.Count > 0);
+                    Assert.That(progressReports.Count > 0, Is.True);
                 }
             });
         }
@@ -208,7 +206,7 @@ public class IterationServiceTests
 
             Assert.Multiple(() =>
             {
-                Assert.IsTrue(result.IsCompleted);
+                Assert.That(result.IsCompleted, Is.True);
                 Assert.That(result.TotalItems, Is.EqualTo(2));
                 Assert.That(result.SuccessfulItems, Is.EqualTo(0));
                 Assert.That(result.FailedItems, Is.EqualTo(2));
@@ -257,7 +255,7 @@ public class IterationServiceTests
 
             Assert.Multiple(() =>
             {
-                Assert.IsFalse(result.IsCompleted);
+                Assert.That(result.IsCompleted, Is.False);
                 Assert.That(result.FailedItems, Is.EqualTo(1));
                 Assert.That(result.SkippedItems, Is.EqualTo(1));
             });
@@ -294,8 +292,8 @@ public class IterationServiceTests
             Assert.Multiple(() =>
             {
                 Assert.That(targets.Count(), Is.EqualTo(2));
-                Assert.Contains(subDir1, targets.ToList());
-                Assert.Contains(subDir2, targets.ToList());
+                Assert.That(targets, Does.Contain(subDir1));
+                Assert.That(targets, Does.Contain(subDir2));
             });
         }
         finally
@@ -307,7 +305,9 @@ public class IterationServiceTests
     [Test]
     public async Task ValidateIterationOptionsAsync_InvalidRootDirectory_ReturnsError()
     {
-        var invalidPath = "/definitely/does/not/exist";
+        var invalidPath = OperatingSystem.IsWindows()
+            ? @"Z:\definitely\does\not\exist"
+            : "/definitely/does/not/exist";
         var options = new IterationOptions();
 
         var result = await _iterationService.ValidateIterationOptionsAsync(
@@ -316,8 +316,8 @@ public class IterationServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsFalse(result.IsValid);
-            Assert.Contains($"Root directory does not exist: {invalidPath}", result.Errors);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Does.Contain($"Root directory does not exist: {invalidPath}"));
         });
     }
 }

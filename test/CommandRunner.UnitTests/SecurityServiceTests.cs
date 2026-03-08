@@ -29,7 +29,7 @@ public class SecurityServiceTests
 
         var result = await _securityService.RequiresConfirmationAsync(command);
 
-        Assert.IsTrue(result);
+        Assert.That(result, Is.True);
     }
 
     [Test]
@@ -45,7 +45,7 @@ public class SecurityServiceTests
 
         var result = await _securityService.RequiresConfirmationAsync(command);
 
-        Assert.IsFalse(result);
+        Assert.That(result, Is.False);
     }
 
     [Test]
@@ -62,7 +62,7 @@ public class SecurityServiceTests
 
         var result = await _securityService.RequiresConfirmationAsync(command);
 
-        Assert.IsTrue(result);
+        Assert.That(result, Is.True);
     }
 
     [Test]
@@ -80,8 +80,8 @@ public class SecurityServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsFalse(result.IsValid);
-            Assert.Contains("Command 'blockedcommand' is blocked for security reasons", result.Errors);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Does.Contain("Command 'blockedcommand' is blocked for security reasons"));
         });
     }
 
@@ -100,8 +100,8 @@ public class SecurityServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsTrue(result.IsValid);
-            Assert.IsEmpty(result.Errors);
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(result.Errors, Is.Empty);
         });
     }
 
@@ -112,13 +112,13 @@ public class SecurityServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsNotNull(settings);
-            Assert.IsTrue(settings.RequireConfirmationForDangerousCommands);
-            Assert.IsTrue(settings.SandboxExecution);
+            Assert.That(settings, Is.Not.Null);
+            Assert.That(settings.RequireConfirmationForDangerousCommands, Is.True);
+            Assert.That(settings.SandboxExecution, Is.True);
             Assert.That(settings.MaxExecutionTimeSeconds, Is.EqualTo(300));
-            Assert.IsNotNull(settings.BlockedCommands);
-            Assert.IsNotNull(settings.DangerousPatterns);
-            Assert.IsTrue(settings.LogCommandExecutions);
+            Assert.That(settings.BlockedCommands, Is.Not.Null);
+            Assert.That(settings.DangerousPatterns, Is.Not.Null);
+            Assert.That(settings.LogCommandExecutions, Is.True);
         });
     }
 
@@ -142,12 +142,12 @@ public class SecurityServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(retrievedSettings.RequireConfirmationForDangerousCommands, Is.EqualTo(false));
-            Assert.That(retrievedSettings.SandboxExecution, Is.EqualTo(false));
+            Assert.That(retrievedSettings.RequireConfirmationForDangerousCommands, Is.False);
+            Assert.That(retrievedSettings.SandboxExecution, Is.False);
             Assert.That(retrievedSettings.MaxExecutionTimeSeconds, Is.EqualTo(600));
-            Assert.Contains("testblock", retrievedSettings.BlockedCommands);
-            Assert.Contains("testpattern", retrievedSettings.DangerousPatterns);
-            Assert.That(retrievedSettings.LogCommandExecutions, Is.EqualTo(false));
+            Assert.That(retrievedSettings.BlockedCommands, Does.Contain("testblock"));
+            Assert.That(retrievedSettings.DangerousPatterns, Does.Contain("testpattern"));
+            Assert.That(retrievedSettings.LogCommandExecutions, Is.False);
             Assert.That(retrievedSettings.LogDirectory, Is.EqualTo("/var/log"));
         });
     }
@@ -165,7 +165,7 @@ public class SecurityServiceTests
 
         var result = await _securityService.IsDangerousCommandAsync(command);
 
-        Assert.IsTrue(result);
+        Assert.That(result, Is.True);
     }
 
     [Test]
@@ -181,7 +181,7 @@ public class SecurityServiceTests
 
         var result = await _securityService.IsDangerousCommandAsync(command);
 
-        Assert.IsTrue(result);
+        Assert.That(result, Is.True);
     }
 
     [Test]
@@ -197,7 +197,7 @@ public class SecurityServiceTests
 
         var result = await _securityService.IsDangerousCommandAsync(command);
 
-        Assert.IsFalse(result);
+        Assert.That(result, Is.False);
     }
 
     [Test]
@@ -209,7 +209,7 @@ public class SecurityServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsNotNull(result);
+            Assert.That(result, Is.Not.Null);
             Assert.That(result, Is.Not.EqualTo(dangerousArgs));
             Assert.That(result, Does.Not.Contain(";"));
         });
@@ -234,7 +234,7 @@ public class SecurityServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsNotNull(result);
+            Assert.That(result, Is.Not.Null);
             Assert.That(result, Does.Not.Contain("../"));
         });
     }
@@ -254,8 +254,8 @@ public class SecurityServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsFalse(result.IsValid);
-            Assert.Contains("Command arguments contain potentially dangerous characters", result.Errors);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Does.Contain("Command arguments contain potentially dangerous characters"));
         });
     }
 
@@ -274,8 +274,8 @@ public class SecurityServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsFalse(result.IsValid);
-            Assert.Contains("Command arguments contain path traversal patterns", result.Errors);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Does.Contain("Command arguments contain path traversal patterns"));
         });
     }
 }

@@ -14,20 +14,20 @@ jobs:
         include:
           # Ubuntu
           - os: ubuntu-latest
-            dotnet-version: '8.0.x'
+            dotnet-version: '10.0.x'
             shell-test: bash
 
           # Windows with different shells
           - os: windows-latest
-            dotnet-version: '8.0.x'
+            dotnet-version: '10.0.x'
             shell-test: powershell
           - os: windows-latest
-            dotnet-version: '8.0.x'
+            dotnet-version: '10.0.x'
             shell-test: cmd
 
           # macOS
           - os: macos-latest
-            dotnet-version: '8.0.x'
+            dotnet-version: '10.0.x'
             shell-test: bash
 
     steps:
@@ -83,7 +83,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-results-${{ matrix.os }}-${{ matrix.dotnet-version }}
+        name: test-results-${{ matrix.os }}-${{ matrix.dotnet-version }}-${{ matrix.shell-test }}
         path: |
           **/TestResults/*.xml
           **/TestResults/*.html

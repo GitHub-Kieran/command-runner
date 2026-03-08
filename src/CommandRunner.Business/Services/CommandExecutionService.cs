@@ -102,6 +102,14 @@ public class CommandExecutionService : ICommandExecutionService
             result.ExecutionTime = DateTime.UtcNow - startTime;
             result.CompletedAt = DateTime.UtcNow;
         }
+        catch (OperationCanceledException)
+        {
+            result.WasCancelled = true;
+            result.ExitCode = -1;
+            result.ExecutionErrors.Add("Execution was cancelled");
+            result.ExecutionTime = DateTime.UtcNow - startTime;
+            result.CompletedAt = DateTime.UtcNow;
+        }
         catch (Exception ex)
         {
             result.ExitCode = -1;
@@ -194,6 +202,14 @@ public class CommandExecutionService : ICommandExecutionService
             await process.WaitForExitAsync(cancellationToken);
 
             result.ExitCode = process.ExitCode;
+            result.ExecutionTime = DateTime.UtcNow - startTime;
+            result.CompletedAt = DateTime.UtcNow;
+        }
+        catch (OperationCanceledException)
+        {
+            result.WasCancelled = true;
+            result.ExitCode = -1;
+            result.ExecutionErrors.Add("Execution was cancelled");
             result.ExecutionTime = DateTime.UtcNow - startTime;
             result.CompletedAt = DateTime.UtcNow;
         }

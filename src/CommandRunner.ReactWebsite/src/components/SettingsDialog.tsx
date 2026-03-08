@@ -424,18 +424,6 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                                 )}
                               </Box>
                             </Box>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditProfile(profile);
-                              }}
-                              title="Select this profile to view and edit its commands"
-                              sx={{ ml: 1 }}
-                            >
-                              Select
-                            </Button>
                           </Box>
                         </CardContent>
                         <CardActions sx={{ justifyContent: 'space-between' }}>

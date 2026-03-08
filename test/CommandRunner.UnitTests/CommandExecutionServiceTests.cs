@@ -1,6 +1,7 @@
 using CommandRunner.Business.Services;
 using CommandRunner.Business.Models;
 using CommandRunner.Data.Models;
+using System.Collections.Concurrent;
 
 namespace CommandRunner.UnitTests;
 
@@ -178,7 +179,7 @@ public class CommandExecutionServiceTests
                 WorkingDirectory = Directory.GetCurrentDirectory()
             }
         };
-        var results = new List<CommandExecutionResult>();
+        var results = new ConcurrentBag<CommandExecutionResult>();
 
         var executionResults = await _executionService.ExecuteCommandsParallelAsync(
             commands,

@@ -83,7 +83,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-results-${{ matrix.os }}-${{ matrix.dotnet-version }}
+        name: test-results-${{ matrix.os }}-${{ matrix.dotnet-version }}-${{ matrix.shell-test }}
         path: |
           **/TestResults/*.xml
           **/TestResults/*.html

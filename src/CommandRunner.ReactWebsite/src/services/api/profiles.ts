@@ -27,6 +27,25 @@ export class ProfilesApiService {
     return apiClient.post<ProfileDto>('/api/profiles', profile);
   }
 
+  // Import profile from JSON file
+  async importProfile(file: File): Promise<ProfileDto> {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5081';
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${apiBaseUrl}/api/profiles/import`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `Failed to import profile (${response.status})`);
+    }
+
+    return response.json() as Promise<ProfileDto>;
+  }
+
   // Update profile
   async updateProfile(id: string, profile: Partial<ProfileDto>): Promise<void> {
     return apiClient.put(`/api/profiles/${id}`, profile);

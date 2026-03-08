@@ -132,13 +132,14 @@ jobs:
         name: PR #${{ github.event.pull_request.number }} pre-release (${{ matrix.platform }})
         target_commitish: ${{ github.sha }}
         files: |
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.exe
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.deb
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.AppImage
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.dmg
+          src/CommandRunner.ReactWebsite/dist-electron/*.exe
+          src/CommandRunner.ReactWebsite/dist-electron/*.deb
+          src/CommandRunner.ReactWebsite/dist-electron/*.AppImage
+          src/CommandRunner.ReactWebsite/dist-electron/*.dmg
         generate_release_notes: false
         draft: false
         prerelease: true
+        overwrite_files: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -147,13 +148,14 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.exe
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.deb
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.AppImage
-          src/CommandRunner.ReactWebsite/dist-electron/**/*.dmg
+          src/CommandRunner.ReactWebsite/dist-electron/*.exe
+          src/CommandRunner.ReactWebsite/dist-electron/*.deb
+          src/CommandRunner.ReactWebsite/dist-electron/*.AppImage
+          src/CommandRunner.ReactWebsite/dist-electron/*.dmg
         generate_release_notes: true
         draft: false
         prerelease: false
+        overwrite_files: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

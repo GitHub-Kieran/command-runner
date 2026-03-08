@@ -41,8 +41,8 @@ public class CommandExecutionServiceTests
             Assert.That(result.WorkingDirectory, Is.EqualTo(command.WorkingDirectory));
             Assert.That(result.CommandId, Is.EqualTo(command.Id));
             Assert.That(result.CommandName, Is.EqualTo(command.Name));
-            Assert.That(result.StartedAt, Is.Not.EqualTo(default));
-            Assert.That(result.CompletedAt, Is.Not.EqualTo(default));
+            Assert.That(result.StartedAt, Is.Not.EqualTo(default(DateTime)));
+            Assert.That(result.CompletedAt, Is.Not.EqualTo(default(DateTime)));
             Assert.That(result.ExecutionTime > TimeSpan.Zero, Is.True);
         });
     }

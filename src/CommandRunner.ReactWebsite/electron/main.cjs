@@ -50,7 +50,7 @@ if (process.platform === 'linux') {
 function startApiServer() {
   console.log('Starting API server...');
 
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = !app.isPackaged;
   const isPackaged = app.isPackaged;
 
   let apiPath;
@@ -248,9 +248,9 @@ function createWindow() {
   });
 
   // Load the app
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = !app.isPackaged;
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5175');
+    mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));

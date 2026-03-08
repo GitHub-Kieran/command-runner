@@ -12,7 +12,6 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 // Register business services
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
@@ -42,11 +41,6 @@ Console.WriteLine($"User profile: {Environment.GetEnvironmentVariable("USERPROFI
 Console.WriteLine($"AppData: {Environment.GetEnvironmentVariable("APPDATA")}");
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 if (app.Environment.IsDevelopment())
 {

@@ -16,8 +16,16 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "node_modules/**/*",
-      "dist-electron/api/**/*"
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "dist-electron/api",
+        "to": "api",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
@@ -52,14 +60,19 @@
     "preview": "vite preview",
     "electron": "electron .",
     "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
-    "publish-api": "cd ../CommandRunner.Api && dotnet publish -c Release -r win-x64 --self-contained true -o ../../src/CommandRunner.ReactWebsite/dist-electron/api",
-    "publish-api-linux": "cd ../CommandRunner.Api && dotnet publish -c Release -r linux-x64 --self-contained true -o ../../src/CommandRunner.ReactWebsite/dist-electron/api",
+    "publish-api": "cd ../CommandRunner.Api && dotnet publish -c Release -r win-x64 --self-contained true -o ../CommandRunner.ReactWebsite/dist-electron/api",
+    "publish-api-linux": "cd ../CommandRunner.Api && dotnet publish -c Release -r linux-x64 --self-contained true -o ../CommandRunner.ReactWebsite/dist-electron/api",
+    "publish-api-mac": "cd ../CommandRunner.Api && dotnet publish -c Release -r osx-x64 --self-contained true -o ../CommandRunner.ReactWebsite/dist-electron/api",
     "build-electron": "npm run build-electron-build && npm run publish-api && electron-builder",
     "build-electron-linux": "npm run build-electron-build && npm run publish-api-linux && electron-builder --linux",
     "build-electron-win": "npm run build-electron-build && npm run publish-api && electron-builder --win",
+    "build-electron-mac": "npm run build-electron-build && npm run publish-api-mac && electron-builder --mac",
     "dist": "npm run build-electron"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.2",

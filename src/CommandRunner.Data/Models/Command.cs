@@ -7,7 +7,7 @@ public class Command
     public string Executable { get; set; } = string.Empty;
     public string Arguments { get; set; } = string.Empty;
     public string WorkingDirectory { get; set; } = string.Empty;
-    public string Shell { get; set; } = "bash"; // bash, cmd, powershell
+    public string Shell { get; set; } = string.Empty;
     public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
     public bool IterationEnabled { get; set; } = false;
     public bool RequireConfirmation { get; set; } = false;

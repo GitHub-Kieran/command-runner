@@ -1,0 +1,49 @@
+{
+  "id": "profile-javascript-tooling",
+  "name": "JavaScript Tooling",
+  "description": "Common npm-based commands for frontend repositories",
+  "commands": [
+    {
+      "id": "cmd-npm-install",
+      "name": "Install Dependencies",
+      "executable": "npm",
+      "arguments": "install",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": false,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "cmd-npm-lint",
+      "name": "Lint",
+      "executable": "npm",
+      "arguments": "run lint",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": false,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "cmd-npm-test",
+      "name": "Test",
+      "executable": "npm",
+      "arguments": "test",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": false,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "createdAt": "2026-01-01T00:00:00Z",
+  "updatedAt": "2026-01-01T00:00:00Z",
+  "isFavorite": false
+}

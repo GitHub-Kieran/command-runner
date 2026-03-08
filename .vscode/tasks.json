@@ -1,0 +1,47 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "command-runner:api",
+      "type": "shell",
+      "command": "dotnet run --project \"${workspaceFolder}/src/CommandRunner.Api/CommandRunner.Api.csproj\"",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "command-runner-api",
+        "fileLocation": "absolute",
+        "pattern": [
+          {
+            "regexp": "^(.*)$",
+            "file": 1,
+            "message": 1
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*$",
+          "endsPattern": "Now listening on:\\s+"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "command-runner"
+      }
+    },
+    {
+      "label": "command-runner:electron-dev",
+      "type": "npm",
+      "script": "electron-dev",
+      "path": "src/CommandRunner.ReactWebsite",
+      "dependsOn": [
+        "command-runner:api"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "command-runner"
+      }
+    }
+  ]
+}

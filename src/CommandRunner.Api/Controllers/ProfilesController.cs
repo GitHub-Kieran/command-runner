@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using CommandRunner.Data.Repositories;
 using CommandRunner.Data.Models;
 using CommandRunner.Api.DTOs;
+using System.Text.Json;
 
 namespace CommandRunner.Api.Controllers;
 
@@ -74,6 +75,76 @@ public class ProfilesController : ControllerBase
 
         Console.WriteLine($"✅ Profile created successfully: '{createdDto.Name}' (ID: {createdDto.Id})");
         return Created($"/api/profiles/{createdDto.Id}", createdDto);
+    }
+
+    [HttpPost("import")]
+    public async Task<ActionResult<ProfileDto>> ImportProfile([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("Profile file is required");
+        }
+
+        await using var stream = file.OpenReadStream();
+        var profileDto = await JsonSerializer.DeserializeAsync<ProfileDto>(stream, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        if (profileDto == null)
+        {
+            return BadRequest("Invalid profile JSON");
+        }
+
+        if (string.IsNullOrWhiteSpace(profileDto.Name))
+        {
+            return BadRequest("Profile name is required");
+        }
+
+        profileDto.Id = string.IsNullOrWhiteSpace(profileDto.Id)
+            ? Guid.NewGuid().ToString()
+            : profileDto.Id;
+
+        profileDto.Commands ??= new List<CommandDto>();
+
+        var now = DateTime.UtcNow;
+        if (profileDto.CreatedAt == default)
+        {
+            profileDto.CreatedAt = now;
+        }
+
+        profileDto.UpdatedAt = now;
+
+        foreach (var command in profileDto.Commands)
+        {
+            command.Id = string.IsNullOrWhiteSpace(command.Id)
+                ? Guid.NewGuid().ToString()
+                : command.Id;
+
+            command.Name ??= string.Empty;
+            command.Executable ??= string.Empty;
+            command.Arguments ??= string.Empty;
+            command.WorkingDirectory ??= string.Empty;
+            command.Shell ??= string.Empty;
+            command.EnvironmentVariables ??= new Dictionary<string, string>();
+
+            if (command.CreatedAt == default)
+            {
+                command.CreatedAt = now;
+            }
+
+            command.UpdatedAt = now;
+        }
+
+        var existingProfile = await _profileRepository.GetByNameAsync(profileDto.Name);
+        if (existingProfile != null)
+        {
+            return Conflict("A profile with this name already exists");
+        }
+
+        var profile = MapFromDto(profileDto);
+        var createdProfile = await _profileRepository.AddAsync(profile);
+        return Created($"/api/profiles/{createdProfile.Id}", MapToDto(createdProfile));
     }
 
     [HttpPut("{id}")]

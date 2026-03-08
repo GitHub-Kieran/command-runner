@@ -62,9 +62,11 @@
     "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
     "publish-api": "cd ../CommandRunner.Api && dotnet publish -c Release -r win-x64 --self-contained true -o ../CommandRunner.ReactWebsite/dist-electron/api",
     "publish-api-linux": "cd ../CommandRunner.Api && dotnet publish -c Release -r linux-x64 --self-contained true -o ../CommandRunner.ReactWebsite/dist-electron/api",
+    "publish-api-mac": "cd ../CommandRunner.Api && dotnet publish -c Release -r osx-x64 --self-contained true -o ../CommandRunner.ReactWebsite/dist-electron/api",
     "build-electron": "npm run build-electron-build && npm run publish-api && electron-builder",
     "build-electron-linux": "npm run build-electron-build && npm run publish-api-linux && electron-builder --linux",
     "build-electron-win": "npm run build-electron-build && npm run publish-api && electron-builder --win",
+    "build-electron-mac": "npm run build-electron-build && npm run publish-api-mac && electron-builder --mac",
     "dist": "npm run build-electron"
   },
   "dependencies": {

@@ -21,12 +21,14 @@ jobs:
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
             platform: linux
           - os: windows-latest
             platform: win32
+          - os: macos-latest
+            platform: darwin
 
     steps:
     - name: Checkout code
@@ -68,6 +70,14 @@ jobs:
         echo "Building Windows Electron app..."
         echo "This will create a .exe installer"
         npm run build-electron-win
+
+    - name: Build Electron app (macOS)
+      if: matrix.platform == 'darwin'
+      working-directory: src/CommandRunner.ReactWebsite
+      run: |
+        echo "Building macOS Electron app..."
+        echo "This will create a .dmg installer"
+        npm run build-electron-mac
 
     - name: Verify build output (Linux)
       if: matrix.platform == 'linux'
@@ -115,6 +125,23 @@ jobs:
         Write-Host "=== WINDOWS INSTALLER INFO ==="
         Write-Host "The .exe file is a standard Windows installer"
         Write-Host "It includes the API server and will auto-start it when the app runs"
+
+    - name: Verify build output (macOS)
+      if: matrix.platform == 'darwin'
+      run: |
+        echo "=== MACOS BUILD VERIFICATION ==="
+        echo "Build output directory:"
+        ls -la src/CommandRunner.ReactWebsite/dist-electron/
+        echo ""
+        echo "macOS installer files:"
+        find src/CommandRunner.ReactWebsite/dist-electron/ -name "*.dmg" -o -name "*.app" | head -10
+        echo ""
+        echo "Package sizes:"
+        du -sh src/CommandRunner.ReactWebsite/dist-electron/*.dmg 2>/dev/null || echo "  DMG not found"
+        echo ""
+        echo "=== MACOS INSTALLER INFO ==="
+        echo "The .dmg file is a standard macOS disk image"
+        echo "It includes the API server and will auto-start it when the app runs"
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4

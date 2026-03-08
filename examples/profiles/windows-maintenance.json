@@ -1,0 +1,49 @@
+{
+  "id": "profile-windows-maintenance",
+  "name": "Windows Maintenance",
+  "description": "Useful Windows shell commands for diagnostics and cleanup",
+  "commands": [
+    {
+      "id": "cmd-win-ipconfig",
+      "name": "Network Configuration",
+      "executable": "ipconfig",
+      "arguments": "/all",
+      "workingDirectory": "C:\\",
+      "shell": "cmd",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": false,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "cmd-win-processes",
+      "name": "List Processes",
+      "executable": "tasklist",
+      "arguments": "",
+      "workingDirectory": "C:\\",
+      "shell": "cmd",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": false,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "cmd-win-disk-check",
+      "name": "Disk Check (Read-Only)",
+      "executable": "chkdsk",
+      "arguments": "C:",
+      "workingDirectory": "C:\\",
+      "shell": "cmd",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": true,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "createdAt": "2026-01-01T00:00:00Z",
+  "updatedAt": "2026-01-01T00:00:00Z",
+  "isFavorite": false
+}

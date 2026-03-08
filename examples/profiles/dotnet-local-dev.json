@@ -1,0 +1,49 @@
+{
+  "id": "profile-dotnet-local-dev",
+  "name": "Dotnet Local Dev",
+  "description": "Common .NET development commands for local repositories",
+  "commands": [
+    {
+      "id": "cmd-dotnet-restore",
+      "name": "Restore",
+      "executable": "dotnet",
+      "arguments": "restore",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": false,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "cmd-dotnet-build",
+      "name": "Build",
+      "executable": "dotnet",
+      "arguments": "build",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": false,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "cmd-dotnet-test",
+      "name": "Test",
+      "executable": "dotnet",
+      "arguments": "test",
+      "workingDirectory": ".",
+      "shell": "bash",
+      "environmentVariables": {},
+      "iterationEnabled": false,
+      "requireConfirmation": false,
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "createdAt": "2026-01-01T00:00:00Z",
+  "updatedAt": "2026-01-01T00:00:00Z",
+  "isFavorite": false
+}

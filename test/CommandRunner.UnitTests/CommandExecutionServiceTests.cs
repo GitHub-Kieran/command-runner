@@ -1,10 +1,10 @@
 using CommandRunner.Business.Services;
 using CommandRunner.Business.Models;
 using CommandRunner.Data.Models;
+using System.Collections.Concurrent;
 
 namespace CommandRunner.UnitTests;
 
-[Ignore("Ignoring so the tests pass on other platforms.")]
 [TestFixture]
 public class CommandExecutionServiceTests
 {
@@ -24,8 +24,9 @@ public class CommandExecutionServiceTests
         var command = new Command
         {
             Name = "Echo Test",
-            Executable = "echo",
+            Executable = OperatingSystem.IsWindows() ? "echo" : "echo",
             Arguments = "Hello World",
+            Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
             WorkingDirectory = Directory.GetCurrentDirectory()
         };
 
@@ -41,8 +42,8 @@ public class CommandExecutionServiceTests
             Assert.That(result.WorkingDirectory, Is.EqualTo(command.WorkingDirectory));
             Assert.That(result.CommandId, Is.EqualTo(command.Id));
             Assert.That(result.CommandName, Is.EqualTo(command.Name));
-            Assert.That(result.StartedAt, Is.Not.EqualTo(default));
-            Assert.That(result.CompletedAt, Is.Not.EqualTo(default));
+            Assert.That(result.StartedAt, Is.Not.EqualTo(default(DateTime)));
+            Assert.That(result.CompletedAt, Is.Not.EqualTo(default(DateTime)));
             Assert.That(result.ExecutionTime > TimeSpan.Zero, Is.True);
         });
     }
@@ -77,6 +78,7 @@ public class CommandExecutionServiceTests
             Name = "Env Test",
             Executable = "echo",
             Arguments = "test",
+            Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
             WorkingDirectory = Directory.GetCurrentDirectory(),
             EnvironmentVariables = new Dictionary<string, string>
             {
@@ -101,7 +103,7 @@ public class CommandExecutionServiceTests
         {
             Name = "Long Running",
             Executable = OperatingSystem.IsWindows() ? "ping" : "sleep",
-            Arguments = OperatingSystem.IsWindows() ? "-t 10 127.0.0.1" : "10",
+            Arguments = OperatingSystem.IsWindows() ? "-n 10 127.0.0.1" : "10",
             WorkingDirectory = Directory.GetCurrentDirectory()
         };
         using var cts = new CancellationTokenSource();
@@ -126,6 +128,7 @@ public class CommandExecutionServiceTests
                 Name = "Command 1",
                 Executable = "echo",
                 Arguments = "First",
+                Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
                 WorkingDirectory = Directory.GetCurrentDirectory()
             },
             new Command
@@ -133,6 +136,7 @@ public class CommandExecutionServiceTests
                 Name = "Command 2",
                 Executable = "echo",
                 Arguments = "Second",
+                Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
                 WorkingDirectory = Directory.GetCurrentDirectory()
             }
         };
@@ -163,6 +167,7 @@ public class CommandExecutionServiceTests
                 Name = "Parallel 1",
                 Executable = "echo",
                 Arguments = "Parallel1",
+                Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
                 WorkingDirectory = Directory.GetCurrentDirectory()
             },
             new Command
@@ -170,10 +175,11 @@ public class CommandExecutionServiceTests
                 Name = "Parallel 2",
                 Executable = "echo",
                 Arguments = "Parallel2",
+                Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
                 WorkingDirectory = Directory.GetCurrentDirectory()
             }
         };
-        var results = new List<CommandExecutionResult>();
+        var results = new ConcurrentBag<CommandExecutionResult>();
 
         var executionResults = await _executionService.ExecuteCommandsParallelAsync(
             commands,

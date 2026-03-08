@@ -338,12 +338,13 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({
           boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)',
         }}
       >
-        {isLoading ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {isLoading && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: output ? 1 : 0 }}>
             <CircularProgress size={16} />
-            Loading...
+            Running...
           </Box>
-        ) : output ? <FormattedOutput formatted={formatOutput(output)} /> : 'Ready to execute commands...'}
+        )}
+        {output ? <FormattedOutput formatted={formatOutput(output)} /> : 'Ready to execute commands...'}
       </Box>
     </Paper>
   );

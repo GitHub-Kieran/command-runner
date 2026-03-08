@@ -29,8 +29,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateCommandAsync(command, command.WorkingDirectory);
 
-        Assert.IsTrue(result.IsValid);
-        Assert.IsEmpty(result.Errors);
+        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Errors, Is.Empty);
     }
 
     [Test]
@@ -48,8 +48,8 @@ public class CommandValidationServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsFalse(result.IsValid);
-            Assert.Contains("Command name is required", result.Errors);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Does.Contain("Command name is required"));
         });
     }
 
@@ -68,8 +68,8 @@ public class CommandValidationServiceTests
 
         Assert.Multiple(() =>
         {
-            Assert.IsFalse(result.IsValid);
-            Assert.Contains("Executable is required", result.Errors);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.Errors, Does.Contain("Executable is required"));
         });
     }
 
@@ -86,8 +86,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateCommandAsync(command, invalidDirectory);
 
-        Assert.IsFalse(result.IsValid);
-        Assert.Contains($"Working directory does not exist: {invalidDirectory}", result.Errors);
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Errors, Does.Contain($"Working directory does not exist: {invalidDirectory}"));
     }
 
     [Test]
@@ -105,8 +105,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateCommandAsync(command, command.WorkingDirectory);
 
-        Assert.IsTrue(result.IsValid);
-        Assert.Contains("Large number of environment variables may impact performance", result.Warnings);
+        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Warnings, Does.Contain("Large number of environment variables may impact performance"));
     }
 
     [Test]
@@ -123,8 +123,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateCommandAsync(command, command.WorkingDirectory);
 
-        Assert.IsTrue(result.IsValid);
-        Assert.Contains("Iteration enabled but no arguments provided - command will run with default parameters", result.Warnings);
+        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Warnings, Does.Contain("Iteration enabled but no arguments provided - command will run with default parameters"));
     }
 
     [Test]
@@ -134,8 +134,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateWorkingDirectoryAsync(validDirectory);
 
-        Assert.IsTrue(result.IsValid);
-        Assert.IsEmpty(result.Errors);
+        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Errors, Is.Empty);
     }
 
     [Test]
@@ -145,8 +145,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateWorkingDirectoryAsync(invalidDirectory);
 
-        Assert.IsFalse(result.IsValid);
-        Assert.Contains($"Working directory does not exist: {invalidDirectory}", result.Errors);
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Errors, Does.Contain($"Working directory does not exist: {invalidDirectory}"));
     }
 
     [Test]
@@ -154,8 +154,8 @@ public class CommandValidationServiceTests
     {
         var result = await _validationService.ValidateWorkingDirectoryAsync("");
 
-        Assert.IsFalse(result.IsValid);
-        Assert.Contains("Working directory is required", result.Errors);
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Errors, Does.Contain("Working directory is required"));
     }
 
     [Test]
@@ -165,8 +165,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateExecutableAsync(executable, Directory.GetCurrentDirectory());
 
-        Assert.IsTrue(result.IsValid);
-        Assert.IsEmpty(result.Errors);
+        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Errors, Is.Empty);
     }
 
     [Test]
@@ -176,8 +176,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateExecutableAsync(nonexistentExecutable, Directory.GetCurrentDirectory());
 
-        Assert.IsFalse(result.IsValid);
-        Assert.Contains($"Executable not found in PATH: {nonexistentExecutable}", result.Errors);
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Errors, Does.Contain($"Executable not found in PATH: {nonexistentExecutable}"));
     }
 
     [Test]
@@ -192,8 +192,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateEnvironmentVariablesAsync(envVars);
 
-        Assert.IsTrue(result.IsValid);
-        Assert.IsEmpty(result.Errors);
+        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Errors, Is.Empty);
     }
 
     [Test]
@@ -206,8 +206,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateEnvironmentVariablesAsync(envVars);
 
-        Assert.IsFalse(result.IsValid);
-        Assert.Contains("Invalid environment variable name: INVALID-NAME", result.Errors);
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Errors, Does.Contain("Invalid environment variable name: INVALID-NAME"));
     }
 
     [Test]
@@ -220,8 +220,8 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateEnvironmentVariablesAsync(envVars);
 
-        Assert.IsFalse(result.IsValid);
-        Assert.Contains("Environment variable key cannot be empty", result.Errors);
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.Errors, Does.Contain("Environment variable key cannot be empty"));
     }
 
     [Test]
@@ -235,7 +235,7 @@ public class CommandValidationServiceTests
 
         var result = await _validationService.ValidateEnvironmentVariablesAsync(envVars);
 
-        Assert.IsTrue(result.IsValid);
-        Assert.Contains("Environment variable 'LONG_VAR' has a very long value (10001 characters)", result.Warnings);
+        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Warnings, Does.Contain("Environment variable 'LONG_VAR' has a very long value (10001 characters)"));
     }
 }

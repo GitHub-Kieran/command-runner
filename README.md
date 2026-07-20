@@ -241,6 +241,6 @@ See [Releases](https://github.com/GitHub-Kieran/command-runner/releases) for the
 
 # TODO
 [x] Claude.md
-[] Convert to VueJs
+[x] Convert to VueJs
 [] Convert to Vertical Architecture
 [] Build for individual dist

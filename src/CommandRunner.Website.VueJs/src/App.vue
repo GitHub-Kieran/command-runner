@@ -449,7 +449,7 @@ useKeyboardShortcuts({
 .app__row {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--space-3);
 }
 

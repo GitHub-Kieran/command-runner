@@ -1,6 +1,11 @@
 // Thin fetch wrapper: JSON in/out plus consistent, status-code-aware error messages.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5081';
+// No env override => same origin the page was served from. This is what makes the Photino
+// desktop host work without any configuration: it serves the Vue build and the API from the
+// same dynamically-assigned Kestrel port, so relative/same-origin requests always find it
+// regardless of which port got picked. Only the standalone web-dev workflow (Vite dev server
+// on one port, API on another) needs VITE_API_BASE_URL set explicitly.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
 export class ApiError extends Error {
   constructor(

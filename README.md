@@ -243,4 +243,4 @@ See [Releases](https://github.com/GitHub-Kieran/command-runner/releases) for the
 [x] Claude.md
 [x] Convert to VueJs
 [] Convert to Vertical Architecture
-[] Build for individual dist
+[] Fix windows unit test failures

@@ -236,3 +236,11 @@ If you encounter any issues or have questions:
 ## Changelog
 
 See [Releases](https://github.com/GitHub-Kieran/command-runner/releases) for the latest changes and version history.
+
+
+
+# TODO
+[x] Claude.md
+[] Convert to VueJs
+[] Convert to Vertical Architecture
+[] Build for individual dist

@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Command Runner is a cross-platform desktop app for executing shell commands through a UI. Stack: React + TypeScript frontend wrapped in Electron, backed by an ASP.NET Core (.NET 10) API that does the actual process execution. The Electron app bundles and launches the API automatically; in development they're run as two separate processes.
 
+## Code Style
+
+Don't add comments unless the WHY is genuinely non-obvious (a hidden constraint, a workaround for a specific bug, something that would surprise a reader). Well-named identifiers should speak for themselves — don't add comments that restate what the code already says.
+
 ## Common Commands
 
 ### Backend (.NET, from repo root)

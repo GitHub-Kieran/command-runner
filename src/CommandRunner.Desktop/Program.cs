@@ -45,13 +45,24 @@ class Program
 
         var builder = WebApplication.CreateBuilder(args);
 
+        // In DEBUG the webview loads the Vite dev server (below) rather than this Kestrel
+        // instance, so the Vue app's window.location.origin is localhost:5174, not wherever
+        // this API ends up -- an OS-assigned port would be unreachable from it (no proxy target
+        // to point at). Pin DEBUG to a fixed, known port and have Vite proxy /api to it instead;
+        // Release keeps the OS-assigned port since it's same-origin there and has no such need.
+#if DEBUG
+        const string kestrelUrl = "http://127.0.0.1:5081";
+#else
+        const string kestrelUrl = "http://127.0.0.1:0";
+#endif
+
         // Referencing CommandRunner.Api for its controllers also copies its appsettings.json
         // into this app's output, whose fixed Kestrel:Endpoints entry would otherwise win over
         // UseUrls below (config-based endpoints always take precedence in Kestrel). Registering
         // our own value for the same key, after the file-based config sources, overrides it.
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Kestrel:Endpoints:Http:Url"] = "http://127.0.0.1:0",
+            ["Kestrel:Endpoints:Http:Url"] = kestrelUrl,
         });
 
         builder.Services.AddControllers()
@@ -63,8 +74,7 @@ class Program
             });
         builder.Services.AddCommandRunnerServices();
 
-        // Port 0 => the OS assigns any free port. No fixed port to guess or collide with.
-        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.WebHost.UseUrls(kestrelUrl);
 
         var app = builder.Build();
         app.UseDefaultFiles();

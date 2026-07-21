@@ -4,9 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Command Runner is a cross-platform desktop app for executing shell commands through a UI, backed by an ASP.NET Core (.NET 10) API that does the actual process execution. There are two frontend/packaging tracks in this repo:
-- **React + Electron** (`CommandRunner.ReactWebsite`, shipping today) — Electron spawns the API as a *second* process and has to locate/guess its port and install path.
-- **Vue + Photino** (`CommandRunner.Website.VueJs` + `CommandRunner.Desktop`, newer) — a single process hosts both the API and the built Vue static files on one dynamically-assigned port, avoiding that whole class of bug. See the Architecture section below for details on each.
+Command Runner is a cross-platform desktop app for executing shell commands through a UI, backed by an ASP.NET Core (.NET 10) API that does the actual process execution. The frontend/packaging track is **Vue + Photino** (`CommandRunner.Website.VueJs` + `CommandRunner.Desktop`) — a single process hosts both the API and the built Vue static files on one dynamically-assigned port (nothing to guess or collide with). See the Architecture section below for details.
 
 ## Code Style
 
@@ -20,31 +18,14 @@ dotnet restore
 dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build --verbosity normal   # all unit tests (NUnit)
 dotnet test --filter "FullyQualifiedName~CommandExecutionServiceTests"  # single test class
-cd src/CommandRunner.Api && dotnet run    # API only, listens on http://localhost:5081
+cd src/CommandRunner.Api && dotnet run    # API only, listens on http://localhost:5085 (see launchSettings.json)
 ```
 Test project is `test/CommandRunner.UnitTests` (NUnit). It references `CommandRunner.Api` — tests exercise services directly (e.g. `CommandExecutionService`, `CommandValidationService` from `CommandRunner.Api.Features.Commands`), not HTTP endpoints.
 
-### Frontend (from `src/CommandRunner.ReactWebsite/`)
-```bash
-npm install
-npm run dev            # Vite dev server only (localhost:5173)
-npm run electron-dev   # Vite + Electron together, with hot reload (requires API running separately)
-npm run build           # tsc + vite build
-npm run lint            # eslint, max-warnings 0
-```
-
 ### Full app in development
-Preferred: VS Code compound launch config **"Command Runner (Electron + API)"** (`.vscode/launch.json`), which starts the API then Electron. Equivalent manually: run `dotnet run` in `src/CommandRunner.Api` in one terminal, `npm run electron-dev` in `src/CommandRunner.ReactWebsite` in another. The frontend expects the API at `http://localhost:5081` (`VITE_API_BASE_URL` env var overrides this).
+Preferred: VS Code launch config **"Command Runner Desktop (Photino)"** (`.vscode/launch.json`), which runs the `command-runner:vue-dev` task (Vite dev server) then launches `CommandRunner.Desktop`, which loads that dev server in `DEBUG` builds — see the Photino desktop host section below. Equivalent manually: `npm run dev` in `src/CommandRunner.Website.VueJs` in one terminal, `dotnet run --project src/CommandRunner.Desktop` in another.
 
-### Production builds (Electron, from `src/CommandRunner.ReactWebsite/`)
-```bash
-npm run build-electron-linux   # also self-contained-publishes the API into dist-electron/api
-npm run build-electron-win
-npm run build-electron-mac
-```
-These first build the React app and a self-contained publish of `CommandRunner.Api` (via `publish-api*` scripts) into `dist-electron/api`, then run `electron-builder`. The packaged app starts this bundled API itself — see `electron/main.cjs`.
-
-CI (`.github/workflows/build-and-test.yml` → `reusable-build-and-unit-test.yml`) runs on Ubuntu/Windows/macOS: npm build of the React app, `dotnet build` + `dotnet test` for the whole solution, plus a shell-compatibility smoke check (bash/PowerShell/cmd) reflecting that command execution must work correctly across those three shells.
+CI (`.github/workflows/build-and-test.yml` → `reusable-build-and-unit-test.yml`) runs on Ubuntu/Windows/macOS: `dotnet build` + `dotnet test` for the whole solution, plus a shell-compatibility smoke check (bash/PowerShell/cmd) reflecting that command execution must work correctly across those three shells.
 
 ### Vue frontend (from `src/CommandRunner.Website.VueJs/`)
 ```bash
@@ -60,7 +41,9 @@ No `VITE_API_BASE_URL` needed when served by `CommandRunner.Desktop` (same-origi
 cd src/CommandRunner.Website.VueJs && npm run build   # must run first -- populates CommandRunner.Desktop's wwwroot
 dotnet run --project src/CommandRunner.Desktop
 ```
-`CommandRunner.Desktop` is a thin `Microsoft.NET.Sdk.Web` project that hosts the real `CommandRunner.Api` controllers (via a `ProjectReference` + `AddApplicationPart`, not duplicated code) and serves the Vue build's static files from the same Kestrel instance, bound to `http://127.0.0.1:0` (OS-assigned port — nothing to guess or collide with), then opens a native OS webview window (via Photino.NET) pointed at it. In `DEBUG` builds it loads `http://localhost:5174` (the Vite dev server) instead, for hot reload. CI: `.github/workflows/photino-build.yml`, self-contained `dotnet publish` per OS (`win-x64`/`linux-x64`/`osx-x64`), zipped rather than built into a full installer (no WiX/NSIS/`.app` bundling yet). Linux/macOS targets need `libwebkit2gtk` installed (system dependency, not bundled); Windows needs the WebView2 Runtime (preinstalled on Windows 11 / delivered via Windows Update on Windows 10 — deliberately not bundling a Fixed-Version runtime).
+`CommandRunner.Desktop` is a thin `Microsoft.NET.Sdk.Web` project that hosts the real `CommandRunner.Api` controllers (via a `ProjectReference` + `AddApplicationPart`, not duplicated code) and serves the Vue build's static files from the same Kestrel instance, then opens a native OS webview window (via Photino.NET) pointed at it. In `DEBUG` builds it loads `http://localhost:5174` (the Vite dev server) instead, for hot reload. CI: `.github/workflows/photino-build.yml`, self-contained `dotnet publish` per OS (`win-x64`/`linux-x64`/`osx-x64`), zipped rather than built into a full installer (no WiX/NSIS/`.app` bundling yet). Linux/macOS targets need `libwebkit2gtk` installed (system dependency, not bundled); Windows needs the WebView2 Runtime (preinstalled on Windows 11 / delivered via Windows Update on Windows 10 — deliberately not bundling a Fixed-Version runtime).
+
+**Kestrel binds to a fixed port (`http://127.0.0.1:5081`) in `DEBUG`, an OS-assigned one (`http://127.0.0.1:0`) in `Release`** — this asymmetry is deliberate, not an oversight. In `DEBUG` the webview loads the Vite dev server, not this Kestrel instance, so the Vue app's `window.location.origin` is `localhost:5174` — API calls need somewhere fixed to be proxied to, which is what `vite.config.ts`'s `server.proxy['/api'] → http://127.0.0.1:5081` targets. An OS-assigned port here would be unreachable from the dev server (nothing to point the proxy at). In `Release`, Desktop serves the built Vue bundle itself, so it's same-origin and the OS-assigned port works fine (nothing to guess or collide with in packaged builds). If you ever see profiles fail to load / the app stuck on "Running..." when running the Photino dev flow, check this port pairing first — it's exactly what breaks if either side drifts from the other.
 
 **Linux: blank white window under virtualized/software-rendered GPUs (e.g. VirtualBox VMs).** WebKitGTK's DMA-BUF renderer silently fails to composite anything in that environment — no error, just a permanently white webview, even though Kestrel is serving everything correctly (confirm with `curl` against the printed `Command Runner API listening on ...` URL if this comes up again). The fix is `WEBKIT_DISABLE_DMABUF_RENDERER=1`, but WebKitGTK reads it from the process's environment at exec() time — setting it in-process via `Environment.SetEnvironmentVariable()` inside `Main()` is provably too late (confirmed empirically: the window stays blank). `Program.cs` instead re-execs itself as a child process with the variable set from the outset (`OperatingSystem.IsLinux()` guard, skipped if already set, handles both the self-contained apphost and `dotnet run`/framework-dependent launch). If this class of bug resurfaces, `xwd`/`_NET_WM_PID` (or any X11 screenshot tool) plus reading `/proc/<pid>/environ` — noting the latter only reflects the environment at the process's *original* exec(), not later in-process `setenv()` calls — is how it was diagnosed; don't trust an in-process env var fix without actually screenshotting the rendered window.
 
@@ -104,16 +87,10 @@ DTOs are hand-mapped to/from each feature's own model types inside its controlle
 
 **Streaming endpoints**: `CommandsController` has `execute`/`execute-iterative` (buffered JSON response) and `execute-stream`/`execute-iterative-stream` (Server-Sent Events) variants of the same operations. SSE handlers manually write `event:`/`data:` frames and flush after each line — when touching these, keep both the buffered and streaming versions in sync since they duplicate the command/DTO-building logic.
 
-### Frontend (`src/CommandRunner.ReactWebsite/`)
-- Single global state via React Context + `useReducer` in `src/contexts/AppContext.tsx` — no Redux/Zustand. Reducer actions that mutate profiles/directories optimistically update local state *and* fire the corresponding API call inline inside the reducer (not in a separate effect/thunk), rolling back or alerting on failure. Follow this same pattern (optimistic update + fire-and-forget API call inside the action) when adding new state mutations here rather than introducing a different data-fetching approach.
-- `src/services/api/` is a thin axios wrapper (`client.ts`) plus per-resource modules (`profiles.ts`, `directories.ts`, `commands.ts`) — this is the only place HTTP calls should be made from.
-- Electron main process lives in `electron/main.cjs` (the `.ts`/other `.js` files under `electron/` are not the active entry point — check `package.json`'s `"main"` field before editing). It is responsible for locating and spawning the bundled API executable in packaged builds.
-- MUI (`@mui/material`) is the component library; `@dnd-kit/*` provides drag-and-drop reordering for profiles/commands in the settings dialog.
-
 ### Vue frontend (`src/CommandRunner.Website.VueJs/`)
-- Pinia store (`src/stores/app.ts`) is the state-management analogue of the React app's `AppContext` — same optimistic-update-plus-background-API-call pattern for profile/directory mutations.
+- Pinia store (`src/stores/app.ts`) is the single global state store. Actions that mutate profiles/directories optimistically update local state *and* fire the corresponding API call inline inside the action (not in a separate effect/thunk), rolling back or alerting on failure. Follow this same pattern when adding new state mutations here rather than introducing a different data-fetching approach.
 - `src/services/api/client.ts`'s `API_BASE_URL` defaults to `window.location.origin`, **not** a hardcoded port. This matters: `CommandRunner.Desktop` serves the API and this frontend from the same origin on an OS-assigned dynamic port, so a hardcoded fallback (e.g. `http://localhost:5081`) silently breaks the desktop app once built — it did during development of this feature. Only set `VITE_API_BASE_URL` when running the Vite dev server against a separately-hosted API.
-- No component library (no MUI equivalent) — hand-rolled components with BEM class names, native `<select>`/`<dialog>` elements, and CSS custom properties (`src/styles/tokens.css`) driving light/dark theming. Profile/command reordering uses accessible move-up/move-down buttons rather than a drag-and-drop library.
+- No component library — hand-rolled components with BEM class names, native `<select>`/`<dialog>` elements, and CSS custom properties (`src/styles/tokens.css`) driving light/dark theming. Profile/command reordering uses accessible move-up/move-down buttons rather than a drag-and-drop library.
 
 ### Example profiles
 `examples/profiles/*.json` are sample importable profile files (dotnet-local-dev, javascript-tooling, windows-maintenance), matching the `ProfileDto`/`CommandDto` shape used by `POST /api/profiles/import`. Useful as reference when changing the profile/command schema — keep them valid against whatever shape you change.

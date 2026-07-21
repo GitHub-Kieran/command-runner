@@ -1,6 +1,6 @@
 # Command Runner
 
-A cross-platform desktop application for executing commands through a user-friendly interface. Built with React, TypeScript, Electron, and ASP.NET Core.
+A cross-platform desktop application for executing commands through a user-friendly interface. Built with Vue, TypeScript, Photino, and ASP.NET Core.
 
 ![License](https://img.shields.io/github/license/GitHub-Kieran/command-runner?color=green) ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 
@@ -61,37 +61,32 @@ Built-in dark and light themes for comfortable viewing in any environment or lig
 
 Desktop installers include the API backend and start it automatically when the app launches. You should not need to manually run the API in normal desktop usage.
 
+Downloads are plain archives (not installers) — extract and run. There's no auto-update yet, so re-download from Releases for new versions.
+
 ### Linux
 
-#### Option 1: Debian/Ubuntu (.deb)
-1. Download the latest `.deb` file from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
-2. Install using your package manager: `sudo dpkg -i commandrunner-reactwebsite_*.deb`
-3. If there are dependency issues, run: `sudo apt-get install -f`
+1. Download the latest `CommandRunner-linux-x64.tar.gz` from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
+2. Extract it: `tar xzf CommandRunner-linux-x64.tar.gz -C CommandRunner && cd CommandRunner`
+3. Make the binary executable: `chmod +x CommandRunner.Desktop`
+4. Run it: `./CommandRunner.Desktop`
 
-#### Option 2: AppImage
-1. Download the latest `.AppImage` file from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
-2. Make the file executable: `chmod +x CommandRunner-*.AppImage`
-3. Run the AppImage: `./CommandRunner-*.AppImage` or right click and run
+Requires `libwebkit2gtk-4.1-0` (or `libwebkit2gtk-4.0-37` on older distributions) — this is a system dependency and is not bundled, the same as any WebKitGTK-based desktop app. Install it via your distro's package manager if the app fails to start.
 
-#### Option 3: Other Linux Distributions
-For distributions not supporting .deb or AppImage:
-```bash
-cd src/CommandRunner.ReactWebsite
-npm run build-electron-linux
-```
 ### Windows
 
-1. Download the latest `.exe` installer from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
-2. Run the installer and follow the setup wizard
-3. The app will be installed and available in your Start Menu
+1. Download the latest `CommandRunner-win-x64.zip` from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
+2. Extract the zip anywhere
+3. Run `CommandRunner.Desktop.exe`
+
+Requires the WebView2 Runtime, which is preinstalled on Windows 11 and delivered via Windows Update on Windows 10.
 
 Note: Windows may handle built-in shell commands differently to other platforms. For example, to run 'dir' you can use 'cmd' as the executable and shell, with '/c dir' as the arguments.
 
 ### macOS
 
-1. Download the latest `.dmg` file from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
-2. Open the DMG file and drag the app to your Applications folder
-3. Launch the app from Applications
+1. Download the latest `CommandRunner-osx-x64.zip` from the [Releases](https://github.com/GitHub-Kieran/command-runner/releases) page
+2. Extract the zip
+3. Run `CommandRunner.Desktop`
 
 ### Data Storage
 
@@ -120,44 +115,34 @@ Profile data is stored as JSON files in these directories and persists between a
    ```
 
 2. **Start the app from VS Code (recommended)**
-   - Select launch profile: `Command Runner (Electron + API)`
-   - This starts both the API and Electron app together
+   - Select launch config: `Command Runner Desktop (Photino)`
+   - This starts the Vite dev server, then launches the Photino desktop host pointed at it
 
 3. **Alternative manual start** (two terminals)
 
-   **API server:**
+   **Vue dev server:**
    ```bash
-   cd src/CommandRunner.Api
-   dotnet run
-   ```
-   The API will be available at `http://localhost:5081`
-
-   **Frontend + Electron:**
-   ```bash
-   cd src/CommandRunner.ReactWebsite
+   cd src/CommandRunner.Website.VueJs
    npm install
-   npm run electron-dev
+   npm run dev
    ```
+   Runs at `http://localhost:5174` with hot reloading.
 
-This will start both the Vite dev server and Electron app with hot reloading.
+   **Desktop host** (hosts the API itself — no separate API process needed):
+   ```bash
+   dotnet run --project src/CommandRunner.Desktop
+   ```
+   In `DEBUG` builds this loads the Vite dev server above instead of a built static bundle, so UI changes hot-reload.
 
 ### Building for Production
 
-#### Build Electron App
 ```bash
-cd src/CommandRunner.ReactWebsite
-
-# Build for current platform
-npm run build-electron
-
-# Build for Linux only
-npm run build-electron-linux
-
-# Build for Windows only
-npm run build-electron-win
+cd src/CommandRunner.Website.VueJs && npm run build   # must run first -- populates CommandRunner.Desktop's wwwroot
+dotnet publish src/CommandRunner.Desktop -c Release -r linux-x64 --self-contained true -o publish/linux
+# or win-x64 / osx-x64
 ```
 
-The built packages will be available in `src/CommandRunner.ReactWebsite/dist-electron/`.
+The published output is a self-contained folder — zip or tar it up for distribution. See `.github/workflows/photino-build.yml` for the exact commands CI uses per platform.
 
 ## Example Profiles
 
@@ -180,14 +165,13 @@ Coming soon...
 
 ```
 src/
-├── CommandRunner.ReactWebsite/     # React frontend + Electron wrapper
-│   ├── electron/                   # Electron main process files
-│   ├── public/                     # Static assets
-│   ├── src/                        # React application source
-│   └── package.json                # Electron dependencies and scripts
-├── CommandRunner.Api/              # ASP.NET Core API backend (REQUIRED)
-├── CommandRunner.Business/         # Business logic layer
-├── CommandRunner.Data/             # Data access layer
+├── CommandRunner.Website.VueJs/    # Vue frontend
+│   ├── src/                        # Vue application source
+│   └── package.json                # Frontend dependencies and scripts
+├── CommandRunner.Api/              # ASP.NET Core API — vertical feature slices; owns models,
+│                                    # repositories, business services, controllers, and DTOs
+├── CommandRunner.Desktop/          # Photino host: serves the API + Vue's built static files
+│                                    # from one process, then opens a native webview window
 └── CommandRunner.Console/          # Console application
 ```
 
@@ -196,20 +180,20 @@ src/
 ### Common Issues
 
 **App won't start on Linux:**
-- Try the .deb package instead of AppImage
-- Run: `sudo apt-get install -f` to fix dependencies
+- Install `libwebkit2gtk-4.1-0` (or `libwebkit2gtk-4.0-37` on older distributions) via your package manager
+- If the window opens but stays blank/white, this is a known WebKitGTK rendering issue under virtualized/software-rendered GPUs (e.g. VirtualBox VMs) — should already be worked around automatically; if it recurs, see the note in `CLAUDE.md`
 
 **API connection errors:**
-- Ensure the API server is running on port 5081
-- Check firewall settings
-- In development, use VS Code launch profile `Command Runner (Electron + API)` or run `cd src/CommandRunner.Api && dotnet run`
+- The desktop app hosts its own API internally on an OS-assigned port — there's nothing to configure
+- If running the API standalone in development, check it's listening (`cd src/CommandRunner.Api && dotnet run`, default `http://localhost:5085`) and check firewall settings
 
 **Build issues:**
 - Ensure .NET 10.0 SDK is installed
 - Clear node_modules: `rm -rf node_modules && npm install`
+- Make sure `npm run build` has been run in `src/CommandRunner.Website.VueJs` before building `CommandRunner.Desktop` — otherwise it publishes with no bundled UI
 
 **Permission issues:**
-- On Linux: `chmod +x CommandRunner-*.AppImage`
+- On Linux/macOS: `chmod +x CommandRunner.Desktop` after extracting
 - On Windows: Run as administrator if needed
 
 ## Contributing
@@ -242,5 +226,6 @@ See [Releases](https://github.com/GitHub-Kieran/command-runner/releases) for the
 # TODO
 [x] Claude.md
 [x] Convert to VueJs
-[] Convert to Vertical Architecture
-[] Fix windows unit test failures
+[x] Convert to Vertical Architecture
+[x] Remove old React/Electron version and build pipeline
+[x] Fix windows unit test failures

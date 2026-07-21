@@ -23,7 +23,7 @@ public class CommandExecutionServiceTests
         var command = new Command
         {
             Name = "Echo Test",
-            Executable = OperatingSystem.IsWindows() ? "echo" : "echo",
+            Executable = "echo",
             Arguments = "Hello World",
             Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
             WorkingDirectory = Directory.GetCurrentDirectory()
@@ -76,7 +76,9 @@ public class CommandExecutionServiceTests
         {
             Name = "Env Test",
             Executable = "echo",
-            Arguments = "test",
+            // Actually reads the variable back so the assertion proves the child process received
+            // it, not just that it survived a round-trip through the result DTO.
+            Arguments = OperatingSystem.IsWindows() ? "%TEST_VAR%" : "$TEST_VAR",
             Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
             WorkingDirectory = Directory.GetCurrentDirectory(),
             EnvironmentVariables = new Dictionary<string, string>
@@ -89,6 +91,8 @@ public class CommandExecutionServiceTests
 
         Assert.Multiple(() =>
         {
+            Assert.That(result.WasSuccessful, Is.True, $"Command failed with exit code {result.ExitCode}. Output: '{result.StandardOutput}', Error: '{result.StandardError}'");
+            Assert.That(result.StandardOutput, Does.Contain("test_value"));
             Assert.That(result.EnvironmentVariables, Is.Not.Null);
             Assert.That(result.EnvironmentVariables.Count, Is.EqualTo(command.EnvironmentVariables.Count));
             Assert.That(result.EnvironmentVariables["TEST_VAR"], Is.EqualTo("test_value"));

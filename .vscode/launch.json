@@ -1,14 +1,5 @@
 {
   "version": "0.2.0",
-  "compounds": [
-    {
-      "name": "Command Runner (Electron + API)",
-      "configurations": [
-        "Command Runner API",
-        "Command Runner Electron"
-      ]
-    }
-  ],
   "configurations": [
     {
       "name": "Command Runner API",
@@ -24,19 +15,18 @@
       "console": "integratedTerminal"
     },
     {
-      "name": "Command Runner Electron",
-      "type": "node",
+      "name": "Command Runner Desktop (Photino)",
+      "type": "coreclr",
       "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
+      "program": "dotnet",
+      "args": [
         "run",
-        "electron-dev"
+        "--project",
+        "${workspaceFolder}/src/CommandRunner.Desktop/CommandRunner.Desktop.csproj"
       ],
-      "cwd": "${workspaceFolder}/src/CommandRunner.ReactWebsite",
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
+      "preLaunchTask": "command-runner:vue-dev"
     }
   ]
 }

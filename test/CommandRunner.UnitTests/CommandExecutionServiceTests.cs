@@ -1,6 +1,5 @@
-using CommandRunner.Business.Services;
-using CommandRunner.Business.Models;
-using CommandRunner.Data.Models;
+using CommandRunner.Api.Features.Commands;
+using CommandRunner.Api.Features.Profiles;
 using System.Collections.Concurrent;
 
 namespace CommandRunner.UnitTests;
@@ -24,7 +23,7 @@ public class CommandExecutionServiceTests
         var command = new Command
         {
             Name = "Echo Test",
-            Executable = OperatingSystem.IsWindows() ? "echo" : "echo",
+            Executable = "echo",
             Arguments = "Hello World",
             Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
             WorkingDirectory = Directory.GetCurrentDirectory()
@@ -77,7 +76,9 @@ public class CommandExecutionServiceTests
         {
             Name = "Env Test",
             Executable = "echo",
-            Arguments = "test",
+            // Actually reads the variable back so the assertion proves the child process received
+            // it, not just that it survived a round-trip through the result DTO.
+            Arguments = OperatingSystem.IsWindows() ? "%TEST_VAR%" : "$TEST_VAR",
             Shell = OperatingSystem.IsWindows() ? "cmd" : "bash",
             WorkingDirectory = Directory.GetCurrentDirectory(),
             EnvironmentVariables = new Dictionary<string, string>
@@ -90,6 +91,8 @@ public class CommandExecutionServiceTests
 
         Assert.Multiple(() =>
         {
+            Assert.That(result.WasSuccessful, Is.True, $"Command failed with exit code {result.ExitCode}. Output: '{result.StandardOutput}', Error: '{result.StandardError}'");
+            Assert.That(result.StandardOutput, Does.Contain("test_value"));
             Assert.That(result.EnvironmentVariables, Is.Not.Null);
             Assert.That(result.EnvironmentVariables.Count, Is.EqualTo(command.EnvironmentVariables.Count));
             Assert.That(result.EnvironmentVariables["TEST_VAR"], Is.EqualTo("test_value"));
@@ -142,18 +145,17 @@ public class CommandExecutionServiceTests
         };
         var results = new List<CommandExecutionResult>();
 
-        var executionResults = await _executionService.ExecuteCommandsAsync(
+        var executionResults = (await _executionService.ExecuteCommandsAsync(
             commands,
             Directory.GetCurrentDirectory(),
-            new Progress<CommandExecutionResult>(result => results.Add(result)));
+            new Progress<CommandExecutionResult>(result => results.Add(result)))).ToList();
 
         Assert.Multiple(() =>
         {
-            Assert.That(executionResults.Count(), Is.EqualTo(2));
-            Assert.That(results.Count, Is.EqualTo(2));
-            Assert.That(results.All(r => r.WasSuccessful), Is.True);
-            Assert.That(results[0].CommandId, Is.EqualTo(commands[0].Id));
-            Assert.That(results[1].CommandId, Is.EqualTo(commands[1].Id));
+            Assert.That(executionResults, Has.Count.EqualTo(2));
+            Assert.That(executionResults.All(r => r.WasSuccessful), Is.True);
+            Assert.That(executionResults[0].CommandId, Is.EqualTo(commands[0].Id));
+            Assert.That(executionResults[1].CommandId, Is.EqualTo(commands[1].Id));
         });
     }
 
@@ -181,17 +183,16 @@ public class CommandExecutionServiceTests
         };
         var results = new ConcurrentBag<CommandExecutionResult>();
 
-        var executionResults = await _executionService.ExecuteCommandsParallelAsync(
+        var executionResults = (await _executionService.ExecuteCommandsParallelAsync(
             commands,
             Directory.GetCurrentDirectory(),
             maxParallelism: 2,
-            new Progress<CommandExecutionResult>(result => results.Add(result)));
+            new Progress<CommandExecutionResult>(result => results.Add(result)))).ToList();
 
         Assert.Multiple(() =>
         {
-            Assert.That(executionResults.Count(), Is.EqualTo(2));
-            Assert.That(results.Count, Is.EqualTo(2));
-            Assert.That(results.All(r => r.WasSuccessful), Is.True);
+            Assert.That(executionResults, Has.Count.EqualTo(2));
+            Assert.That(executionResults.All(r => r.WasSuccessful), Is.True);
         });
     }
 }

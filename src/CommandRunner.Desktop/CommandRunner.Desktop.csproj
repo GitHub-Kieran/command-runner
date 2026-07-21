@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Hides the console window on Windows, the standard convention for a desktop app. -->
+    <OutputType Condition="'$(OS)' == 'Windows_NT'">WinExe</OutputType>
+    <OutputType Condition="'$(OS)' != 'Windows_NT'">Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Photino.NET" Version="4.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CommandRunner.Api\CommandRunner.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Populated by `npm run build` in CommandRunner.Website.VueJs; a bare `dotnet build`
+         without that step first just produces an app with no bundled UI (fine in DEBUG,
+         which loads the Vite dev server instead of wwwroot). -->
+    <Content Include="..\CommandRunner.Website.VueJs\dist\**"
+             Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             Condition="Exists('..\CommandRunner.Website.VueJs\dist')" />
+  </ItemGroup>
+
+</Project>

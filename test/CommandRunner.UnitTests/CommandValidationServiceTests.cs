@@ -1,7 +1,6 @@
 using NUnit.Framework;
-using CommandRunner.Business.Services;
-using CommandRunner.Business.Models;
-using CommandRunner.Data.Models;
+using CommandRunner.Api.Features.Commands;
+using CommandRunner.Api.Features.Profiles;
 
 namespace CommandRunner.UnitTests;
 
@@ -22,7 +21,7 @@ public class CommandValidationServiceTests
         var command = new Command
         {
             Name = "Test Command",
-            Executable = "echo",
+            Executable = OperatingSystem.IsWindows() ? "cmd.exe" : "echo",
             Arguments = "Hello World",
             WorkingDirectory = Directory.GetCurrentDirectory()
         };
@@ -96,7 +95,7 @@ public class CommandValidationServiceTests
         var command = new Command
         {
             Name = "Test Command",
-            Executable = "echo",
+            Executable = OperatingSystem.IsWindows() ? "cmd.exe" : "echo",
             Arguments = "test",
             WorkingDirectory = Directory.GetCurrentDirectory(),
             EnvironmentVariables = Enumerable.Range(1, 25)
@@ -115,7 +114,7 @@ public class CommandValidationServiceTests
         var command = new Command
         {
             Name = "Test Command",
-            Executable = "echo",
+            Executable = OperatingSystem.IsWindows() ? "cmd.exe" : "echo",
             Arguments = "",
             WorkingDirectory = Directory.GetCurrentDirectory(),
             IterationEnabled = true

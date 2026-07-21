@@ -145,18 +145,17 @@ public class CommandExecutionServiceTests
         };
         var results = new List<CommandExecutionResult>();
 
-        var executionResults = await _executionService.ExecuteCommandsAsync(
+        var executionResults = (await _executionService.ExecuteCommandsAsync(
             commands,
             Directory.GetCurrentDirectory(),
-            new Progress<CommandExecutionResult>(result => results.Add(result)));
+            new Progress<CommandExecutionResult>(result => results.Add(result)))).ToList();
 
         Assert.Multiple(() =>
         {
-            Assert.That(executionResults.Count(), Is.EqualTo(2));
-            Assert.That(results.Count, Is.EqualTo(2));
-            Assert.That(results.All(r => r.WasSuccessful), Is.True);
-            Assert.That(results[0].CommandId, Is.EqualTo(commands[0].Id));
-            Assert.That(results[1].CommandId, Is.EqualTo(commands[1].Id));
+            Assert.That(executionResults, Has.Count.EqualTo(2));
+            Assert.That(executionResults.All(r => r.WasSuccessful), Is.True);
+            Assert.That(executionResults[0].CommandId, Is.EqualTo(commands[0].Id));
+            Assert.That(executionResults[1].CommandId, Is.EqualTo(commands[1].Id));
         });
     }
 
@@ -184,17 +183,16 @@ public class CommandExecutionServiceTests
         };
         var results = new ConcurrentBag<CommandExecutionResult>();
 
-        var executionResults = await _executionService.ExecuteCommandsParallelAsync(
+        var executionResults = (await _executionService.ExecuteCommandsParallelAsync(
             commands,
             Directory.GetCurrentDirectory(),
             maxParallelism: 2,
-            new Progress<CommandExecutionResult>(result => results.Add(result)));
+            new Progress<CommandExecutionResult>(result => results.Add(result)))).ToList();
 
         Assert.Multiple(() =>
         {
-            Assert.That(executionResults.Count(), Is.EqualTo(2));
-            Assert.That(results.Count, Is.EqualTo(2));
-            Assert.That(results.All(r => r.WasSuccessful), Is.True);
+            Assert.That(executionResults, Has.Count.EqualTo(2));
+            Assert.That(executionResults.All(r => r.WasSuccessful), Is.True);
         });
     }
 }

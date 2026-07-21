@@ -1,7 +1,6 @@
 using NUnit.Framework;
-using CommandRunner.Business.Services;
-using CommandRunner.Business.Models;
-using CommandRunner.Data.Models;
+using CommandRunner.Api.Features.Commands;
+using CommandRunner.Api.Features.Profiles;
 
 namespace CommandRunner.UnitTests;
 

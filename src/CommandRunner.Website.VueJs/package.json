@@ -1,0 +1,27 @@
+{
+  "name": "commandrunner-website-vuejs",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Cross-platform command execution tool (Vue frontend)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --max-warnings 0",
+    "type-check": "vue-tsc -b --noEmit"
+  },
+  "dependencies": {
+    "pinia": "^2.2.6",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/eslint-config-typescript": "^14.1.4",
+    "eslint": "^9.16.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "typescript": "~5.6.3",
+    "vite": "^6.0.3",
+    "vue-tsc": "^2.1.10"
+  }
+}

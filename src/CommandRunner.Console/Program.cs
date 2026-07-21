@@ -5,7 +5,8 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
-using CommandRunner.Api.DTOs;
+using CommandRunner.Api.Features.Profiles;
+using CommandRunner.Api.Features.Commands;
 
 namespace CommandRunner.ConsoleApp;
 

@@ -306,7 +306,7 @@ node_modules/
 
 # Build outputs
 dist/
-dist-electron/
+publish/
 *.AppImage
 *.deb
 *.rpm

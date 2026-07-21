@@ -29,14 +29,26 @@
       }
     },
     {
-      "label": "command-runner:electron-dev",
+      "label": "command-runner:vue-dev",
       "type": "npm",
-      "script": "electron-dev",
-      "path": "src/CommandRunner.ReactWebsite",
-      "dependsOn": [
-        "command-runner:api"
-      ],
-      "problemMatcher": [],
+      "script": "dev",
+      "path": "src/CommandRunner.Website.VueJs",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "command-runner-vue",
+        "pattern": [
+          {
+            "regexp": "^(.*)$",
+            "file": 1,
+            "message": 1
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*$",
+          "endsPattern": "ready in"
+        }
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",

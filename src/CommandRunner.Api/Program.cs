@@ -1,5 +1,4 @@
-using CommandRunner.Data.Repositories;
-using CommandRunner.Business.Services;
+using CommandRunner.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,13 +12,7 @@ builder.Services.AddControllers()
     });
 builder.Services.AddEndpointsApiExplorer();
 
-// Register business services
-builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
-builder.Services.AddScoped<IFavoriteDirectoryRepository, FavoriteDirectoryRepository>();
-builder.Services.AddScoped<ICommandValidationService, CommandValidationService>();
-builder.Services.AddScoped<ICommandExecutionService, CommandExecutionService>();
-builder.Services.AddScoped<IIterationService, IterationService>();
-builder.Services.AddScoped<ISecurityService, SecurityService>();
+builder.Services.AddCommandRunnerServices();
 
 // Configure CORS
 builder.Services.AddCors(options =>

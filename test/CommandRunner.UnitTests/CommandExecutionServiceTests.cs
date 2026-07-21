@@ -1,6 +1,5 @@
-using CommandRunner.Business.Services;
-using CommandRunner.Business.Models;
-using CommandRunner.Data.Models;
+using CommandRunner.Api.Features.Commands;
+using CommandRunner.Api.Features.Profiles;
 using System.Collections.Concurrent;
 
 namespace CommandRunner.UnitTests;

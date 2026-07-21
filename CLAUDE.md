@@ -22,7 +22,7 @@ dotnet test --configuration Release --no-build --verbosity normal   # all unit t
 dotnet test --filter "FullyQualifiedName~CommandExecutionServiceTests"  # single test class
 cd src/CommandRunner.Api && dotnet run    # API only, listens on http://localhost:5081
 ```
-Test project is `test/CommandRunner.UnitTests` (NUnit). It references `CommandRunner.Business` only — tests exercise services directly (e.g. `CommandExecutionService`, `CommandValidationService`), not HTTP endpoints.
+Test project is `test/CommandRunner.UnitTests` (NUnit). It references `CommandRunner.Api` — tests exercise services directly (e.g. `CommandExecutionService`, `CommandValidationService` from `CommandRunner.Api.Features.Commands`), not HTTP endpoints.
 
 ### Frontend (from `src/CommandRunner.ReactWebsite/`)
 ```bash
@@ -62,27 +62,45 @@ dotnet run --project src/CommandRunner.Desktop
 ```
 `CommandRunner.Desktop` is a thin `Microsoft.NET.Sdk.Web` project that hosts the real `CommandRunner.Api` controllers (via a `ProjectReference` + `AddApplicationPart`, not duplicated code) and serves the Vue build's static files from the same Kestrel instance, bound to `http://127.0.0.1:0` (OS-assigned port — nothing to guess or collide with), then opens a native OS webview window (via Photino.NET) pointed at it. In `DEBUG` builds it loads `http://localhost:5174` (the Vite dev server) instead, for hot reload. CI: `.github/workflows/photino-build.yml`, self-contained `dotnet publish` per OS (`win-x64`/`linux-x64`/`osx-x64`), zipped rather than built into a full installer (no WiX/NSIS/`.app` bundling yet). Linux/macOS targets need `libwebkit2gtk` installed (system dependency, not bundled); Windows needs the WebView2 Runtime (preinstalled on Windows 11 / delivered via Windows Update on Windows 10 — deliberately not bundling a Fixed-Version runtime).
 
+**Linux: blank white window under virtualized/software-rendered GPUs (e.g. VirtualBox VMs).** WebKitGTK's DMA-BUF renderer silently fails to composite anything in that environment — no error, just a permanently white webview, even though Kestrel is serving everything correctly (confirm with `curl` against the printed `Command Runner API listening on ...` URL if this comes up again). The fix is `WEBKIT_DISABLE_DMABUF_RENDERER=1`, but WebKitGTK reads it from the process's environment at exec() time — setting it in-process via `Environment.SetEnvironmentVariable()` inside `Main()` is provably too late (confirmed empirically: the window stays blank). `Program.cs` instead re-execs itself as a child process with the variable set from the outset (`OperatingSystem.IsLinux()` guard, skipped if already set, handles both the self-contained apphost and `dotnet run`/framework-dependent launch). If this class of bug resurfaces, `xwd`/`_NET_WM_PID` (or any X11 screenshot tool) plus reading `/proc/<pid>/environ` — noting the latter only reflects the environment at the process's *original* exec(), not later in-process `setenv()` calls — is how it was diagnosed; don't trust an in-process env var fix without actually screenshotting the rendered window.
+
 ## Architecture
 
-### Layered .NET solution (`src/`)
+### .NET solution (`src/`)
 ```
-CommandRunner.Data          # Models (Command, Profile, FavoriteDirectory) + JSON-file repositories
-CommandRunner.Business      # Services: validation, execution, iteration, security; ServiceCollectionExtensions.AddCommandRunnerServices()
-CommandRunner.Api           # ASP.NET Core controllers + DTOs, thin mapping layer over Business/Data
+CommandRunner.Api           # ASP.NET Core, organized as vertical feature slices — owns models, repositories, services, controllers, and DTOs
 CommandRunner.Desktop       # Photino host: hosts Api's controllers + Vue's static build in one process
 CommandRunner.Console       # Separate console entry point
 ```
-Dependency direction is strictly Data → Business → Api. Controllers talk to `IProfileRepository`/`IFavoriteDirectoryRepository` (Data) and the Business services directly — there is no separate service layer inside the API project. DTOs (`Api/DTOs`) are hand-mapped to/from `Data.Models` types in each controller (see `ProfilesController.MapToDto`/`MapFromDto`); there is no AutoMapper.
+There is no separate Data or Business project — that layered split was replaced with a single `CommandRunner.Api` project organized as vertical feature slices, so a feature's persistence model, repository, business services, controller, and DTOs all live together instead of being spread across technical-layer projects.
 
-`AddCommandRunnerServices()` (`CommandRunner.Business/ServiceCollectionExtensions.cs`) is the single place that registers the repositories/services into DI. Both `CommandRunner.Api/Program.cs` and `CommandRunner.Desktop/Program.cs` call it — add new services there, not inline in either `Program.cs`, so the two hosts can't drift out of sync.
+**`CommandRunner.Api` has no top-level `Models`/`Repositories`/`Services`/`Controllers`/`DTOs` folders.** Each feature is a `Features/<FeatureName>/` folder, namespaced `CommandRunner.Api.Features.<FeatureName>`, holding everything that feature needs end to end:
+```
+Features/Profiles/     # Profile, Command (the entity nested inside a profile), IProfileRepository, ProfileRepository,
+                        # ProfileDto, CommandDto, ProfilesController
+Features/Commands/      # ICommandExecutionService/CommandExecutionService, ICommandValidationService/CommandValidationService,
+                        # IIterationService/IterationService (+ IterationOptions), ISecurityService/SecurityService (+ SecuritySettings),
+                        # CommandExecutionResult, IterationProgress (+ IterationItemResult), ValidationResult,
+                        # CommandExecutionRequest, CommandExecutionResponse, IterationExecutionResponse, IterationItemResultDto,
+                        # CommandsController (execute/execute-stream/execute-iterative/execute-iterative-stream/validate)
+Features/Directories/   # FavoriteDirectory, IFavoriteDirectoryRepository, FavoriteDirectoryRepository,
+                        # FavoriteDirectoryDto, DirectoriesController
+Shared/                 # BaseJsonRepository<T> — genuinely cross-feature (both ProfileRepository and FavoriteDirectoryRepository derive from it)
+ServiceCollectionExtensions.cs  # stays at the project root — a composition root that touches every feature, not itself a feature
+```
+Profiles and Directories are pure data-plus-DTO features with no business-service layer at all — `ProfilesController`/`DirectoriesController` only depend on their own feature's repository. `CommandsController` is the one controller with real business logic, and it also depends on `CommandRunner.Api.Features.Profiles` (for `IProfileRepository` and the nested `Command` type it looks up and executes) — a feature slice reaching into another feature slice is normal here; it's the same dependency a profile's commands always had, just expressed as a same-project cross-namespace reference instead of a cross-project one.
 
-**Persistence**: `BaseJsonRepository<T>` (`CommandRunner.Data/Repositories`) is a generic in-memory-cache-over-JSON-file store — no database. Data lives in the OS app-data folder (`%APPDATA%/CommandRunner`, `~/.config/CommandRunner`, `~/Library/Application Support/CommandRunner`), one JSON file per entity type (e.g. `profiles.json`). Repository instances are registered `Scoped` in DI but the underlying cache is per-file, reloaded when the file's mtime changes.
+DTOs are hand-mapped to/from each feature's own model types inside its controller (see `ProfilesController.MapToDto`/`MapFromDto`); there is no AutoMapper. When adding a new feature, create a `Features/<Name>/` folder with everything it needs (skip the services entirely if it has no business logic, the way Profiles/Directories do) rather than reintroducing shared `Models`/`Repositories`/`Services`/`Controllers`/`DTOs` folders. Only add to `Shared/` when something is genuinely used by more than one feature — don't default new code there. `[Route("api/[controller]")]` derives the route from the controller class name regardless of namespace/folder, so routes are unaffected by this structure.
 
-**Command execution** (`CommandExecutionService`): wraps `System.Diagnostics.Process`. Two execution modes — buffered (`ExecuteCommandAsync`) and streaming (`ExecuteCommandWithStreamingAsync`, used for SSE endpoints). When `Command.Shell` is set, the executable+arguments are wrapped and re-quoted for that shell (cmd/powershell/bash) rather than run directly — Windows and Unix take different quoting paths in `CreateProcess`. Every execution is preceded by a call into `ICommandValidationService`.
+`AddCommandRunnerServices()` (`CommandRunner.Api/ServiceCollectionExtensions.cs`) is the single place that registers the repositories/services into DI. Both `CommandRunner.Api/Program.cs` and `CommandRunner.Desktop/Program.cs` call it — add new services there, not inline in either `Program.cs`, so the two hosts can't drift out of sync. `CommandRunner.Desktop` references `CommandRunner.Api.csproj` only (for its controllers, static-file hosting, and `AddCommandRunnerServices()`) — there's nothing else left to reference now that Data/Business are gone. `test/CommandRunner.UnitTests` references `CommandRunner.Api.csproj` directly and tests feature services in isolation (constructing `CommandExecutionService`, `CommandValidationService`, etc. and calling them directly) rather than through HTTP.
 
-**Validation vs. security are separate services**: `CommandValidationService` checks structural correctness (name/executable present, working directory exists and is writable, executable resolvable via PATH, env var name/value sanity). `SecurityService` is a distinct concern — blocked-command list, dangerous-character/path-traversal checks, and a confirmation-required check (`RequiresConfirmationAsync`) that controllers must honor via `request.UserConfirmed` before executing. Do not merge these two — they're intentionally separate layers with different responsibilities.
+**Persistence**: `BaseJsonRepository<T>` (`CommandRunner.Api/Shared/BaseJsonRepository.cs`) is a generic in-memory-cache-over-JSON-file store — no database. Data lives in the OS app-data folder (`%APPDATA%/CommandRunner`, `~/.config/CommandRunner`, `~/Library/Application Support/CommandRunner`), one JSON file per entity type (e.g. `profiles.json`). Repository instances are registered `Scoped` in DI but the underlying cache is per-file, reloaded when the file's mtime changes.
 
-**Iteration** (`IterationService`): recursively walks a directory tree (depth-limited, include/exclude glob-ish patterns) and re-runs a command once per matching subdirectory, reusing `ICommandExecutionService` per target. Supports skip-on-error vs. stop-on-first-failure semantics and parallelism limits.
+**Command execution** (`CommandExecutionService`, in `Features/Commands/`): wraps `System.Diagnostics.Process`. Two execution modes — buffered (`ExecuteCommandAsync`) and streaming (`ExecuteCommandWithStreamingAsync`, used for SSE endpoints). When `Command.Shell` is set, the executable+arguments are wrapped and re-quoted for that shell (cmd/powershell/bash) rather than run directly — Windows and Unix take different quoting paths in `CreateProcess`. Every execution is preceded by a call into `ICommandValidationService`.
+
+**Validation vs. security are separate services**, both in `Features/Commands/`: `CommandValidationService` checks structural correctness (name/executable present, working directory exists and is writable, executable resolvable via PATH, env var name/value sanity). `SecurityService` is a distinct concern — blocked-command list, dangerous-character/path-traversal checks, and a confirmation-required check (`RequiresConfirmationAsync`) that `CommandsController` must honor via `request.UserConfirmed` before executing. Do not merge these two — they're intentionally separate services with different responsibilities, even though they now sit in the same feature folder.
+
+**Iteration** (`IterationService`, in `Features/Commands/`): recursively walks a directory tree (depth-limited, include/exclude glob-ish patterns) and re-runs a command once per matching subdirectory, reusing `ICommandExecutionService` per target. Supports skip-on-error vs. stop-on-first-failure semantics and parallelism limits.
 
 **Streaming endpoints**: `CommandsController` has `execute`/`execute-iterative` (buffered JSON response) and `execute-stream`/`execute-iterative-stream` (Server-Sent Events) variants of the same operations. SSE handlers manually write `event:`/`data:` frames and flush after each line — when touching these, keep both the buffered and streaming versions in sync since they duplicate the command/DTO-building logic.
 

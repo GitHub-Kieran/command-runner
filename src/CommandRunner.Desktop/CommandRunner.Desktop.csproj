@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CommandRunner.Api\CommandRunner.Api.csproj" />
-    <ProjectReference Include="..\CommandRunner.Business\CommandRunner.Business.csproj" />
   </ItemGroup>
 
   <ItemGroup>

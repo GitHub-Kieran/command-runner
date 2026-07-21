@@ -1,5 +1,6 @@
+using System.Diagnostics;
 using System.Drawing;
-using CommandRunner.Business;
+using CommandRunner.Api;
 using Photino.NET;
 
 namespace CommandRunner.Desktop;
@@ -9,6 +10,39 @@ class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if (OperatingSystem.IsLinux() && Environment.GetEnvironmentVariable("WEBKIT_DISABLE_DMABUF_RENDERER") is null)
+        {
+            // WebKitGTK's DMA-BUF renderer often fails to composite anything under virtualized/
+            // software-rendered GPUs (e.g. VirtualBox), producing a blank white window with no
+            // error. Forcing the legacy compositor sidesteps that; harmless on real hardware.
+            // WebKitGTK reads this from the process's environment at exec() time, well before any
+            // of our code runs -- Environment.SetEnvironmentVariable() here is too late to affect
+            // it (proven empirically: it does not fix the blank window), so we set it and
+            // re-exec ourselves as a child process instead.
+            var processPath = Environment.ProcessPath ?? "CommandRunner.Desktop";
+            var isDotnetHost = Path.GetFileNameWithoutExtension(processPath).Equals("dotnet", StringComparison.OrdinalIgnoreCase);
+
+            var psi = new ProcessStartInfo(processPath)
+            {
+                UseShellExecute = false,
+            };
+            if (isDotnetHost)
+            {
+                // `dotnet run`/framework-dependent launch: process is the dotnet muxer, so the
+                // entry assembly's DLL has to be passed as its first argument.
+                psi.ArgumentList.Add(System.Reflection.Assembly.GetEntryAssembly()!.Location);
+            }
+            foreach (var arg in args)
+            {
+                psi.ArgumentList.Add(arg);
+            }
+            psi.Environment["WEBKIT_DISABLE_DMABUF_RENDERER"] = "1";
+
+            using var child = Process.Start(psi);
+            child!.WaitForExit();
+            Environment.Exit(child.ExitCode);
+        }
+
         var builder = WebApplication.CreateBuilder(args);
 
         // Referencing CommandRunner.Api for its controllers also copies its appsettings.json
@@ -21,7 +55,7 @@ class Program
         });
 
         builder.Services.AddControllers()
-            .AddApplicationPart(typeof(CommandRunner.Api.Controllers.ProfilesController).Assembly)
+            .AddApplicationPart(typeof(CommandRunner.Api.Features.Profiles.ProfilesController).Assembly)
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
